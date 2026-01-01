@@ -16,7 +16,7 @@ export interface AuthResponse {
   user: User;
 }
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export class AuthService {
   private static TOKEN_KEY = 'naxos_auth_token';

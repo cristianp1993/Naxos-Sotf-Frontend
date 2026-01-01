@@ -110,12 +110,36 @@ body {
   animation-delay: 0.5s;
 }
 
+.animation-delay-600 {
+  animation-delay: 0.6s;
+}
+
+.animation-delay-900 {
+  animation-delay: 0.9s;
+}
+
 .animation-delay-1000 {
   animation-delay: 1s;
 }
 
+.animation-delay-1200 {
+  animation-delay: 1.2s;
+}
+
+.animation-delay-1500 {
+  animation-delay: 1.5s;
+}
+
+.animation-delay-1800 {
+  animation-delay: 1.8s;
+}
+
 .animation-delay-2000 {
   animation-delay: 2s;
+}
+
+.animation-delay-2500 {
+  animation-delay: 2.5s;
 }
 
 .animation-delay-3000 {
@@ -124,4 +148,129 @@ body {
 
 .animation-delay-4000 {
   animation-delay: 4s;
+}
+
+/* Neon Text Effect for NAXOS title */
+@keyframes neon-glow {
+  0%, 100% {
+    text-shadow: 
+      0 0 5px #ff6b9d,
+      0 0 10px #ff6b9d,
+      0 0 20px #ff6b9d,
+      0 0 40px #c44569;
+  }
+  25% {
+    text-shadow: 
+      0 0 5px #a8e6cf,
+      0 0 10px #a8e6cf,
+      0 0 20px #a8e6cf,
+      0 0 40px #56ab91;
+  }
+  50% {
+    text-shadow: 
+      0 0 5px #88d8f5,
+      0 0 10px #88d8f5,
+      0 0 20px #88d8f5,
+      0 0 40px #4facfe;
+  }
+  75% {
+    text-shadow: 
+      0 0 5px #ffeaa7,
+      0 0 10px #ffeaa7,
+      0 0 20px #ffeaa7,
+      0 0 40px #fdcb6e;
+  }
+}
+
+@keyframes neon-color-shift {
+  0%, 100% {
+    color: #e91e63;
+  }
+  25% {
+    color: #26a69a;
+  }
+  50% {
+    color: #2196f3;
+  }
+  75% {
+    color: #ff9800;
+  }
+}
+
+.neon-title {
+  animation: neon-glow 4s ease-in-out infinite, neon-color-shift 4s ease-in-out infinite;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.1);
+}
+
+/* Pastel background blobs for carta */
+@keyframes pastel-blob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.05);
+    opacity: 0.6;
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+    opacity: 0.4;
+  }
+}
+
+.animate-pastel-blob {
+  animation: pastel-blob 10s ease-in-out infinite;
+}
+
+/* Enhanced shadows for premium cards */
+.shadow-3xl {
+  box-shadow: 
+    0 35px 60px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.shadow-4xl {
+  box-shadow: 
+    0 50px 100px -20px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Custom backdrop blur utilities */
+.backdrop-blur-xs {
+  backdrop-filter: blur(2px);
+}
+
+/* Enhanced hover effects */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 
+    0 50px 100px -20px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Premium gradient borders */
+.border-gradient {
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, #667eea 0%, #764ba2 100%) border-box;
+}
+
+/* Text gradient utilities */
+.text-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Enhanced focus states for accessibility */
+.focus-ring:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useFormValidation } from '@/hooks/useFormValidation';
 
@@ -78,6 +79,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [authError, setAuthError] = useState('');
   
+  const router = useRouter();
   const { login } = useAuth();
   const {
     getFieldError,
@@ -105,9 +107,10 @@ export default function LoginPage() {
 
     try {
       await login(username, password);
+      // Redirigir al admin después del login exitoso
+      router.push('/admin');
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : 'Error de autenticación');
-    } finally {
       setIsLoading(false);
     }
   };

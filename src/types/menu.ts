@@ -11,6 +11,7 @@ export interface Variant {
   variant_id: number;
   variant_name: string;
   ounces: number;
+  toppings: number;
   foto_url: string;
   precio_actual: number;
 }

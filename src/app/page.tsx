@@ -2,15 +2,19 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import LoginPage from './login/page';
 
 export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    // Si el usuario está autenticado, se puede redirigir a /carta
-    // Por ahora mantenemos el login siempre visible
-  }, [isAuthenticated]);
+    // Si el usuario está autenticado, redirigir automáticamente al dashboard
+    if (isAuthenticated) {
+      router.push('/admin');
+    }
+  }, [isAuthenticated, router]);
 
   if (isLoading) {
     return (
