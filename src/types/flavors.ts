@@ -1,3 +1,5 @@
+import { Product } from "./products";
+
 // Tipos para la gestión de sabores
 export interface Flavor {
   flavor_id: number;

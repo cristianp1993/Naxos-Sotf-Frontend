@@ -5,6 +5,13 @@ export interface Category {
   name: string;
 }
 
+export interface Flavor {
+  flavor_id: number;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Product {
   product_id: number;
   category_id: number;
@@ -18,11 +25,9 @@ export interface Product {
   flavors?: Flavor[]; // Relación con sabores
 }
 
-export interface Flavor {
-  flavor_id: number;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
+// Debe ir después de Product y Flavor
+export interface ProductWithFlavors extends Product {
+  flavors: Flavor[];
 }
 
 export interface ProductFormData {
