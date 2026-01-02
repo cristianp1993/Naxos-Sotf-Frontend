@@ -15,7 +15,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Naxos Coctels",
-  description: "Sistema de gestión para bar - Naxos Coctels",
+  description: "Sistema de gestión - Naxos Coctels",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
