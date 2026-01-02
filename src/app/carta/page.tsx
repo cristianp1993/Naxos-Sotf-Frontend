@@ -162,18 +162,7 @@ export default function MenuPage() {
 
           return (
             <section key={category} className="mb-10">
-              <div className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-lg shadow-xl">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-white/10 border border-white/20 grid place-items-center text-2xl text-purple-400">
-                    {getCategoryIcon(category)}
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-2xl sm:text-3xl font-black text-purple-100 tracking-wide">
-                      {category}
-                    </h2>
-                  </div>
-                </div>
-              </div>
+
 
               <div className="mt-4 space-y-4">
                 {products.map((product) => {
@@ -185,6 +174,18 @@ export default function MenuPage() {
                       key={product.product_id}
                       className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-lg shadow-xl"
                     >
+                      <div className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-lg shadow-xl mb-4">
+                        <div className="flex items-start gap-4">
+                          <div className="h-12 w-12 rounded-2xl bg-white/10 border border-white/20 grid place-items-center text-2xl text-purple-400">
+                            {getCategoryIcon(category)}
+                          </div>
+                          <div className="flex-1">
+                            <h2 className="text-2xl sm:text-3xl font-black text-purple-100 tracking-wide">
+                              {category}
+                            </h2>
+                          </div>
+                        </div>
+                      </div>
                       <div className="flex items-start gap-3">
                         <div className="h-10 w-10 rounded-2xl bg-white/10 border border-white/20 grid place-items-center text-purple-400">
                           <span className="text-lg">🍹</span>
