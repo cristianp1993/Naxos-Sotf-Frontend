@@ -54,7 +54,7 @@ export default function MenuPage() {
       for (let i = 1; i <= MAX; i++) {
         const path = `/slider/naxos${i}.jpeg`;
         try {
-          const res = await fetch(path, { method: 'HEAD' });
+          const res = await fetch(path, { method: 'GET', cache: 'no-store' });
           if (!res.ok) break; // secuencial: si falla uno, ya no hay más
           found.push(path);
         } catch {
