@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Product, Category, ProductFormData } from '@/types/products';
 import { ProductsService } from '@/services/productsService';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -18,39 +18,44 @@ export default function ProductsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados para el diálogo de confirmación
-  const [confirmDialog, setConfirmDialog] = useState({
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    productId: number | null;
+    productName: string;
+    type: 'danger' | 'warning' | 'info';
+  }>({
     isOpen: false,
-    productId: null as number | null,
+    productId: null,
     productName: '',
-    type: 'danger' as 'danger' | 'warning' | 'info'
+    type: 'danger'
   });
 
-  // Cargar datos iniciales
   useEffect(() => {
-    loadData();
+    void loadData();
   }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const [productsResponse, categoriesResponse] = await Promise.all([
         ProductsService.getProducts(),
         ProductsService.getCategories()
       ]);
 
-      if (productsResponse.success) {
-        setProducts(productsResponse.data);
+      if (!productsResponse.success) {
+        setError(productsResponse.message || 'Error al cargar productos');
+        setProducts([]);
       } else {
-        setError('Error al cargar productos');
+        setProducts(productsResponse.data);
       }
 
-      if (categoriesResponse.success) {
-        setCategories(categoriesResponse.data);
+      if (!categoriesResponse.success) {
+        setError(categoriesResponse.message || 'Error al cargar categorías');
+        setCategories([]);
       } else {
-        setError('Error al cargar categorías');
+        setCategories(categoriesResponse.data);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error de conexión');
@@ -62,23 +67,25 @@ export default function ProductsPage() {
   const handleCreate = () => {
     setSelectedProduct(null);
     setCurrentView('create');
+    setError(null);
   };
 
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
     setCurrentView('edit');
+    setError(null);
   };
 
   const handleDelete = (productId: number) => {
-    const product = products.find(p => p.product_id === productId);
-    if (product) {
-      setConfirmDialog({
-        isOpen: true,
-        productId,
-        productName: product.name,
-        type: 'danger'
-      });
-    }
+    const product = products.find((p) => p.product_id === productId);
+    if (!product) return;
+
+    setConfirmDialog({
+      isOpen: true,
+      productId,
+      productName: product.name,
+      type: 'danger'
+    });
   };
 
   const confirmDelete = async () => {
@@ -86,11 +93,11 @@ export default function ProductsPage() {
 
     try {
       setSubmitting(true);
+      setError(null);
+
       await ProductsService.deleteProduct(confirmDialog.productId);
-      
-      // Actualizar lista local
-      setProducts(prev => prev.filter(p => p.product_id !== confirmDialog.productId));
-      
+
+      setProducts((prev) => prev.filter((p) => p.product_id !== confirmDialog.productId));
       setConfirmDialog({ isOpen: false, productId: null, productName: '', type: 'danger' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al eliminar producto');
@@ -106,23 +113,30 @@ export default function ProductsPage() {
 
       if (currentView === 'create') {
         const response = await ProductsService.createProduct(formData);
-        if (response.success) {
-          setProducts(prev => [...prev, response.data].sort((a, b) => a.product_id - b.product_id));
-          setCurrentView('list');
-        } else {
+
+        if (!response.success) {
           setError(response.message || 'Error al crear producto');
+          return;
         }
-      } else if (currentView === 'edit' && selectedProduct) {
+
+        setProducts((prev) => [...prev, response.data].sort((a, b) => a.product_id - b.product_id));
+        setCurrentView('list');
+        return;
+      }
+
+      if (currentView === 'edit' && selectedProduct) {
         const response = await ProductsService.updateProduct(selectedProduct.product_id, formData);
-        if (response.success) {
-          setProducts(prev => prev.map(p => 
-            p.product_id === selectedProduct.product_id ? response.data : p
-          ));
-          setCurrentView('list');
-          setSelectedProduct(null);
-        } else {
+
+        if (!response.success) {
           setError(response.message || 'Error al actualizar producto');
+          return;
         }
+
+        setProducts((prev) =>
+          prev.map((p) => (p.product_id === selectedProduct.product_id ? response.data : p))
+        );
+        setCurrentView('list');
+        setSelectedProduct(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al procesar solicitud');
@@ -143,13 +157,12 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Productos</h1>
           <p className="text-white/70">Gestiona el catálogo de productos del menú</p>
         </div>
-        
+
         {currentView === 'list' && (
           <button
             onClick={handleCreate}
@@ -163,7 +176,6 @@ export default function ProductsPage() {
         )}
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4">
           <div className="flex items-center">
@@ -174,10 +186,7 @@ export default function ProductsPage() {
               <h3 className="text-red-200 font-medium">Error</h3>
               <p className="text-red-300 text-sm">{error}</p>
             </div>
-            <button
-              onClick={() => setError(null)}
-              className="ml-auto text-red-400 hover:text-red-300"
-            >
+            <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-300">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -186,14 +195,8 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Content */}
       {currentView === 'list' && (
-        <ProductsTable
-          products={products}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          loading={loading}
-        />
+        <ProductsTable products={products} onEdit={handleEdit} onDelete={handleDelete} loading={loading} />
       )}
 
       {currentView === 'create' && (
@@ -217,13 +220,9 @@ export default function ProductsPage() {
         />
       )}
 
-      {/* Botón de volver al listado */}
       {(currentView === 'create' || currentView === 'edit') && (
         <div className="flex justify-center">
-          <button
-            onClick={handleCancel}
-            className="inline-flex items-center px-4 py-2 text-white/70 hover:text-white transition-colors"
-          >
+          <button onClick={handleCancel} className="inline-flex items-center px-4 py-2 text-white/70 hover:text-white transition-colors">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -232,7 +231,6 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Confirm Dialog */}
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
         onClose={closeConfirmDialog}

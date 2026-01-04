@@ -66,6 +66,18 @@ const LinkIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+// Icono simple para Variantes (puedes cambiarlo si quieres)
+const VariantsIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M4 7h6M4 17h6M14 7h6M14 17h6M10 7v10M14 7v10"
+    />
+  </svg>
+);
+
 const UsersIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path
@@ -145,6 +157,12 @@ const ChevronRightIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const ChevronDownIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
 interface MenuItem {
   id: string;
   label: string;
@@ -171,30 +189,9 @@ const menuItems: MenuItem[] = [
     roles: ['ADMIN'],
     description: 'Vista general del sistema'
   },
-  {
-    id: 'products',
-    label: 'Productos',
-    icon: ProductIcon,
-    path: '/admin/products',
-    roles: ['ADMIN'],
-    description: 'Gestión de productos'
-  },
-  {
-    id: 'flavors',
-    label: 'Sabores',
-    icon: FlavorIcon,
-    path: '/admin/flavors',
-    roles: ['ADMIN'],
-    description: 'Gestión de sabores'
-  },
-  {
-    id: 'product-flavors',
-    label: 'Asociar Sabores',
-    icon: LinkIcon,
-    path: '/admin/product-flavors',
-    roles: ['ADMIN'],
-    description: 'Vincular sabores a productos'
-  },
+
+  // ✅ "Productos" ya no va como item normal: ahora es un submenú colapsable.
+
   {
     id: 'users',
     label: 'Usuarios',
@@ -203,14 +200,9 @@ const menuItems: MenuItem[] = [
     roles: ['ADMIN'],
     description: 'Gestión de usuarios'
   },
-  {
-    id: 'categories',
-    label: 'Categorías',
-    icon: CategoryIcon,
-    path: '/admin/categories',
-    roles: ['ADMIN'],
-    description: 'Categorías de productos'
-  },
+
+  // ✅ "Categorías" ya NO va aquí: se movió dentro de Productos.
+
   {
     id: 'inventory',
     label: 'Inventario',
@@ -237,6 +229,50 @@ const menuItems: MenuItem[] = [
   }
 ];
 
+// ✅ Subitems del collapsable "Productos" (incluye Categorías)
+const productSubItems: MenuItem[] = [
+  {
+    id: 'products-inner',
+    label: 'Producto',
+    icon: ProductIcon,
+    path: '/admin/products',
+    roles: ['ADMIN'],
+    description: 'Gestión de productos'
+  },
+  {
+    id: 'categories-inner',
+    label: 'Categorías',
+    icon: CategoryIcon,
+    path: '/admin/categories',
+    roles: ['ADMIN'],
+    description: 'Categorías de productos'
+  },
+  {
+    id: 'flavors',
+    label: 'Sabores',
+    icon: FlavorIcon,
+    path: '/admin/flavors',
+    roles: ['ADMIN'],
+    description: 'Gestión de sabores'
+  },
+  {
+    id: 'product-flavors',
+    label: 'Asociar Sabores',
+    icon: LinkIcon,
+    path: '/admin/product-flavors',
+    roles: ['ADMIN'],
+    description: 'Vincular sabores a productos'
+  },
+  {
+    id: 'variants',
+    label: 'Variantes',
+    icon: VariantsIcon,
+    path: '/admin/variants', // 👈 ajusta si tu ruta es otra
+    roles: ['ADMIN'],
+    description: 'Variantes por producto'
+  }
+];
+
 interface SidebarProps {
   collapsed?: boolean;
   onToggle?: () => void;
@@ -244,16 +280,15 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [productsOpen, setProductsOpen] = useState(true);
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
-  // Mostrar sidebar para cualquier usuario autenticado
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const filteredMenuItems = menuItems.filter((item) => item.roles.includes(user.role));
+  const filteredProductSubItems = productSubItems.filter((item) => item.roles.includes(user.role));
 
   const handleLogout = () => {
     logout();
@@ -271,6 +306,8 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
     if (path === '/carta') return pathname.startsWith('/carta');
     return pathname.startsWith(path);
   };
+
+  const isProductsSectionActive = filteredProductSubItems.some((s) => isActive(s.path));
 
   return (
     <>
@@ -351,23 +388,9 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           </div>
         </div>
 
-        {/* User Info */}
-        {/* <div className={`p-4 ${collapsed ? 'flex justify-center' : 'flex flex-col items-center'} border-b border-white/10`}>
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">{user.name.charAt(0)}</span>
-            </div>
-            {!collapsed && (
-              <div>
-                <p className="text-white font-medium">{user.name}</p>
-                <p className="text-purple-300 text-xs">{user.role}</p>
-              </div>
-            )}
-          </div>
-        </div> */}
-
         {/* Menu Items */}
         <nav className="flex-1 p-4 overflow-y-auto">
+          {/* Items normales */}
           {filteredMenuItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -385,6 +408,54 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               </button>
             );
           })}
+
+          {/* ✅ Collapsable: Productos */}
+          {filteredProductSubItems.length > 0 && (
+            <div className="mb-2">
+              <button
+                onClick={() => setProductsOpen((v) => !v)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${
+                  isProductsSectionActive
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-purple-200 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <ProductIcon className="w-5 h-5" />
+                  {!collapsed && <span className="font-medium">Productos</span>}
+                </div>
+
+                {!collapsed && (
+                  <ChevronDownIcon
+                    className={`w-5 h-5 transition-transform duration-200 ${productsOpen ? 'rotate-180' : 'rotate-0'}`}
+                  />
+                )}
+              </button>
+
+              {/* Submenu */}
+              {!collapsed && productsOpen && (
+                <div className="mt-2 ml-4 pl-2 border-l border-white/10">
+                  {filteredProductSubItems.map((sub) => {
+                    const SubIcon = sub.icon;
+                    return (
+                      <button
+                        key={sub.path}
+                        onClick={() => handleNavigation(sub.path)}
+                        className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl mb-2 transition-all duration-200 ${
+                          isActive(sub.path)
+                            ? 'bg-white/15 text-white'
+                            : 'text-purple-200 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <SubIcon className="w-5 h-5" />
+                        <span className="font-medium">{sub.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* Logout Button */}

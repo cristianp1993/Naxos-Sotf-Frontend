@@ -12,6 +12,38 @@ export interface Flavor {
   updatedAt: string;
 }
 
+export interface Variant {
+  variant_id: number;
+  product_id: number;
+  variant_name: string;
+  ounces: number | null;
+  toppings: number;
+  sku: string | null;
+  image_url: string | null;
+  price: number;
+  is_active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface VariantFormData {
+  product_id: number;
+  variant_name: string;
+  ounces?: number | null;
+  toppings?: number;
+  sku?: string | null;
+  image_url?: string | null;
+  price?: number;
+  is_active?: boolean;
+}
+
+export interface VariantsApiResponse {
+  success?: boolean;  
+  variants?: Variant[];
+  data?: Variant[];
+  message?: string;
+}
+
 export interface Product {
   product_id: number;
   category_id: number;
