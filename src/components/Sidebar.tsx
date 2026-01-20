@@ -215,7 +215,7 @@ const menuItems: MenuItem[] = [
     id: 'orders',
     label: 'Ventas',
     icon: OrdersIcon,
-    path: '/pos',
+    path: '/admin/sales',
     roles: ['ADMIN', 'MANAGER', 'CASHIER'],
     description: 'Realizar pedidos'
   },
@@ -397,11 +397,10 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               <button
                 key={item.path}
                 onClick={() => handleNavigation(item.path)}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl mb-2 transition-all duration-200 ${
-                  isActive(item.path)
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl mb-2 transition-all duration-200 ${isActive(item.path)
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                     : 'text-purple-200 hover:bg-white/10 hover:text-white'
-                }`}
+                  }`}
               >
                 <Icon className="w-5 h-5" />
                 {!collapsed && <span className="font-medium">{item.label}</span>}
@@ -414,11 +413,10 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             <div className="mb-2">
               <button
                 onClick={() => setProductsOpen((v) => !v)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${
-                  isProductsSectionActive
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${isProductsSectionActive
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                     : 'text-purple-200 hover:bg-white/10 hover:text-white'
-                }`}
+                  }`}
               >
                 <div className="flex items-center space-x-3">
                   <ProductIcon className="w-5 h-5" />
@@ -441,11 +439,10 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                       <button
                         key={sub.path}
                         onClick={() => handleNavigation(sub.path)}
-                        className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl mb-2 transition-all duration-200 ${
-                          isActive(sub.path)
+                        className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl mb-2 transition-all duration-200 ${isActive(sub.path)
                             ? 'bg-white/15 text-white'
                             : 'text-purple-200 hover:bg-white/10 hover:text-white'
-                        }`}
+                          }`}
                       >
                         <SubIcon className="w-5 h-5" />
                         <span className="font-medium">{sub.label}</span>
@@ -462,9 +459,8 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         <div className={`p-4 ${collapsed ? 'flex justify-center' : 'flex flex-col items-center'} border-t border-white/10`}>
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-              collapsed ? 'justify-center' : ''
-            }`}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${collapsed ? 'justify-center' : ''
+              }`}
           >
             <LogoutIcon className="w-5 h-5 text-purple-300" />
             {!collapsed && <span className="text-purple-300 font-medium">Cerrar Sesión</span>}

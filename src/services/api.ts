@@ -1,10 +1,11 @@
 import { MenuData } from '@/types/menu';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 
 export const fetchMenu = async (): Promise<MenuData> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/menu/public`);
+    const response = await fetch(`${API_URL}/api/menu/public`);
 
     if (!response.ok) {
       throw new Error(`Error fetching menu: ${response.statusText}`);
@@ -17,3 +18,4 @@ export const fetchMenu = async (): Promise<MenuData> => {
     throw error;
   }
 };
+export { API_URL };
