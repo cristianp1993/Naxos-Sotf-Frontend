@@ -406,14 +406,45 @@ export default function SalesPage() {
                   <section className="space-y-4">
                     <div>
                       <label className="block text-purple-200 font-bold mb-2">Cantidad</label>
-                      <input
-                        type="number"
-                        min="0.1"
-                        step="0.1"
-                        value={quantity}
-                        onChange={(e) => setQuantity(parseFloat(e.target.value) || 1)}
-                        className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      />
+                      <div className="relative">
+                        <div className="flex items-center">
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(Math.max(0.1, quantity - 1))}
+                            className="p-3 rounded-l-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                            </svg>
+                          </button>
+                          <input
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            value={quantity}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || value === null || value === undefined) {
+                                setQuantity(0);
+                              } else {
+                                const numValue = parseFloat(value);
+                                setQuantity(isNaN(numValue) ? 1 : numValue);
+                              }
+                            }}
+                            onFocus={(e) => e.target.select()}
+                            className="flex-1 p-3 bg-white/10 border-t border-b border-white/20 text-white text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(quantity + 1)}
+                            className="p-3 rounded-r-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     <button
