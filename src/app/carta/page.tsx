@@ -368,9 +368,9 @@ export default function MenuPage() {
 
                       <div className="mt-5 rounded-2xl border border-white/20 overflow-hidden">
                         <div className="grid grid-cols-10 bg-white/10 px-3 py-3 text-[11px] font-black text-purple-200 tracking-wide uppercase">
-                          <div className="col-span-6">Tamaño</div>
-                          <div className="col-span-2 text-center">Oz</div>
-                          <div className="col-span-2 text-right">Precio</div>
+                          <div className="col-span-5">Tamaño</div>
+                          <div className="col-span-2 text-left">Oz</div>
+                          <div className="col-span-3 text-right">Precio</div>
                         </div>
 
                         <div className="divide-y divide-white/15">
@@ -385,18 +385,18 @@ export default function MenuPage() {
                                 key={v.variant_id}
                                 className="grid grid-cols-10 px-3 py-3 bg-white/5 hover:bg-white/10 transition-colors"
                               >
-                                <div className="col-span-6">
+                                <div className="col-span-5">
                                   <div className="text-purple-100 font-black text-base">{v.variant_name}</div>
                                   <div className="text-xs text-purple-300 mt-0.5">
                                     🍬 {v.toppings ?? 0} topping{(v.toppings ?? 0) === 1 ? '' : 's'}
                                   </div>
                                 </div>
 
-                                <div className="col-span-2 text-center text-purple-200 font-bold">
+                                <div className="col-span-2 text-left text-purple-200 font-bold">
                                   {v.ounces ?? '—'}
                                 </div>
 
-                                <div className="col-span-2 text-right">
+                                <div className="col-span-3 text-right">
                                   <div className="inline-flex items-center justify-center min-w-[80px] sm:min-w-[100px] max-w-full rounded-xl px-2 py-2 sm:px-3 sm:py-2 font-black border border-white/20 bg-gradient-to-r from-purple-500/30 via-pink-500/25 to-yellow-500/20 text-white shadow-lg">
                                     <span className="text-xs sm:text-sm leading-tight text-center">
                                       {hasPrice ? formatRD(Number(v.precio_actual)) : 'Consultar'}
