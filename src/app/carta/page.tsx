@@ -397,9 +397,11 @@ export default function MenuPage() {
                                 </div>
 
                                 <div className="col-span-2 text-right">
-                                  <span className="inline-flex items-center justify-center w-full rounded-xl px-3 py-2 font-black border border-white/20 bg-gradient-to-r from-purple-500/30 via-pink-500/25 to-yellow-500/20 text-white shadow-lg">
-                                    {hasPrice ? formatRD(Number(v.precio_actual)) : 'Consultar'}
-                                  </span>
+                                  <div className="inline-flex items-center justify-center min-w-[80px] sm:min-w-[100px] max-w-full rounded-xl px-2 py-2 sm:px-3 sm:py-2 font-black border border-white/20 bg-gradient-to-r from-purple-500/30 via-pink-500/25 to-yellow-500/20 text-white shadow-lg">
+                                    <span className="text-xs sm:text-sm leading-tight text-center">
+                                      {hasPrice ? formatRD(Number(v.precio_actual)) : 'Consultar'}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             );
