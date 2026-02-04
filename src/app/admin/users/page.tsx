@@ -203,7 +203,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6 p-4 md:p-6 w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl md:rounded-3xl p-4 md:p-6 border border-white/20">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -226,36 +226,36 @@ export default function UsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white/10 backdrop-blur-lg rounded-2xl md:rounded-3xl border border-white/20 overflow-hidden">
+      <div className="bg-white/10 backdrop-blur-lg rounded-2xl md:rounded-3xl border border-white/20 overflow-hidden w-full">
         {!users || users.length === 0 ? (
           <div className="p-8 md:p-12 text-center">
             <div className="text-purple-200 text-lg">No hay usuarios registrados</div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <div className="min-w-full">
-              <table className="w-full">
+          <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent">
+            <div className="min-w-[900px] lg:min-w-full">
+              <table className="w-full table-fixed">
                 <thead className="bg-white/10 border-b border-white/20">
                   <tr>
-                    <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap w-[120px]">
                       Documento
                     </th>
-                    <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap w-[150px]">
                       Nombre
                     </th>
-                    <th className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap">
+                    <th className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap w-[200px]">
                       Email
                     </th>
-                    <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap w-[80px]">
                       Rol
                     </th>
-                    <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap w-[100px]">
                       Estado
                     </th>
-                    <th className="hidden lg:table-cell px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap">
+                    <th className="hidden lg:table-cell px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap w-[180px]">
                       Fecha Creación
                     </th>
-                    <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap">
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider whitespace-nowrap w-[120px]">
                       Acciones
                     </th>
                   </tr>
@@ -263,22 +263,22 @@ export default function UsersPage() {
                 <tbody className="divide-y divide-white/10">
                   {users.map((user) => (
                     <tr key={user.user_id} className="hover:bg-white/5 transition-colors">
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                        <div className="text-white font-medium text-sm md:text-base truncate max-w-[100px] md:max-w-none" title={user.username}>
+                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap w-[120px]">
+                        <div className="text-white font-medium text-sm md:text-base truncate" title={user.username}>
                           {user.username}
                         </div>
                       </td>
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                        <div className="text-purple-200 text-sm truncate max-w-[120px] md:max-w-none" title={user.name || 'Sin nombre'}>
+                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap w-[150px]">
+                        <div className="text-purple-200 text-sm truncate" title={user.name || 'Sin nombre'}>
                           {user.name || 'Sin nombre'}
                         </div>
                       </td>
-                      <td className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                        <div className="text-purple-200 text-sm truncate max-w-[150px] md:max-w-none" title={user.email}>
+                      <td className="hidden sm:table-cell px-3 md:px-6 py-3 md:py-4 whitespace-nowrap w-[200px]">
+                        <div className="text-purple-200 text-sm truncate" title={user.email}>
                           {user.email}
                         </div>
                       </td>
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap w-[80px]">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           user.role === 'ADMIN' 
                             ? 'bg-purple-500/20 text-purple-400 border border-purple-400/30'
@@ -287,7 +287,7 @@ export default function UsersPage() {
                           {user.role === 'ADMIN' ? 'Admin' : 'Oper'}
                         </span>
                       </td>
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap w-[100px]">
                         <button
                           onClick={() => toggleUserStatus(user.user_id, !user.is_active)}
                           className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full transition-colors ${
@@ -299,12 +299,12 @@ export default function UsersPage() {
                           {user.is_active ? 'Activo' : 'Inactivo'}
                         </button>
                       </td>
-                      <td className="hidden lg:table-cell px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                      <td className="hidden lg:table-cell px-3 md:px-6 py-3 md:py-4 whitespace-nowrap w-[180px]">
                         <div className="text-purple-200 text-sm">
                           {formatDate(user.created_at)}
                         </div>
                       </td>
-                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                      <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap w-[120px]">
                         <div className="flex space-x-1 md:space-x-2">
                           <button
                             onClick={() => handleDetail(user)}

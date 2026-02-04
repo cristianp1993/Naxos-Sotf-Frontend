@@ -466,7 +466,7 @@ export default function MenuPage() {
               </div>
             </div>
             <span className="text-[10px] sm:text-xs font-black text-purple-200 bg-white/10 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full border border-white/20 whitespace-nowrap">
-              Pedir
+              Domicilio
             </span>
           </div>
         </a>
