@@ -337,7 +337,7 @@ export default function MenuPage() {
                           <h3 className="text-xl sm:text-2xl font-black text-purple-100">Sabores</h3>
 
                           {flavors.length > 0 && (
-                            <div className="mt-3">
+                            <div className="mt-5 -ml-12">
                               <div className="mt-2 flex flex-wrap gap-2">
                                 {flavors.map((flavor) => (
                                   <span
@@ -362,18 +362,13 @@ export default function MenuPage() {
                           )}
                         </div>
 
-                        <div className="shrink-0 rounded-2xl border border-white/20 bg-white/10 px-3 py-2 text-right">
-                          <div className="text-xs text-purple-300 font-bold">Tamaños</div>
-                          <div className="text-purple-100 font-black text-lg">{variants.length}</div>
-                        </div>
                       </div>
 
                       <div className="mt-5 rounded-2xl border border-white/20 overflow-hidden">
-                        <div className="grid grid-cols-12 bg-white/10 px-3 py-3 text-[11px] font-black text-purple-200 tracking-wide uppercase">
-                          <div className="col-span-5">Tamaño</div>
+                        <div className="grid grid-cols-10 bg-white/10 px-3 py-3 text-[11px] font-black text-purple-200 tracking-wide uppercase">
+                          <div className="col-span-6">Tamaño</div>
                           <div className="col-span-2 text-center">Oz</div>
-                          <div className="col-span-2 text-center">Top</div>
-                          <div className="col-span-3 text-right">Precio</div>
+                          <div className="col-span-2 text-right">Precio</div>
                         </div>
 
                         <div className="divide-y divide-white/15">
@@ -386,9 +381,9 @@ export default function MenuPage() {
                             return (
                               <div
                                 key={v.variant_id}
-                                className="grid grid-cols-12 px-3 py-3 bg-white/5 hover:bg-white/10 transition-colors"
+                                className="grid grid-cols-10 px-3 py-3 bg-white/5 hover:bg-white/10 transition-colors"
                               >
-                                <div className="col-span-5">
+                                <div className="col-span-6">
                                   <div className="text-purple-100 font-black text-base">{v.variant_name}</div>
                                   <div className="text-xs text-purple-300 mt-0.5">
                                     🍬 {v.toppings ?? 0} topping{(v.toppings ?? 0) === 1 ? '' : 's'}
@@ -399,13 +394,7 @@ export default function MenuPage() {
                                   {v.ounces ?? '—'}
                                 </div>
 
-                                <div className="col-span-2 text-center">
-                                  <span className="inline-flex items-center justify-center min-w-[2.25rem] rounded-full bg-white/10 border border-white/20 px-2 py-1 text-xs font-black text-purple-100">
-                                    {v.toppings ?? 0}
-                                  </span>
-                                </div>
-
-                                <div className="col-span-3 text-right">
+                                <div className="col-span-2 text-right">
                                   <span className="inline-flex items-center justify-center w-full rounded-xl px-3 py-2 font-black border border-white/20 bg-gradient-to-r from-purple-500/30 via-pink-500/25 to-yellow-500/20 text-white shadow-lg">
                                     {hasPrice ? formatRD(Number(v.precio_actual)) : 'Consultar'}
                                   </span>
