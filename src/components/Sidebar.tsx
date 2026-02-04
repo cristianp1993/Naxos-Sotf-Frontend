@@ -100,13 +100,24 @@ const InventoryIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const OrdersIcon = ({ className }: { className?: string }) => (
+const SalesIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
-      d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+    />
+  </svg>
+);
+
+const ViewSalesIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
     />
   </svg>
 );
@@ -175,7 +186,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   {
     id: 'menu',
-    label: 'Carta/Menú',
+    label: '🍹 Carta/Menú',
     icon: ProductIcon,
     path: '/carta',
     roles: ['ADMIN', 'MANAGER', 'CASHIER', 'VIEWER'],
@@ -183,49 +194,55 @@ const menuItems: MenuItem[] = [
   },
   {
     id: 'dashboard',
-    label: 'Dashboard',
+    label: '📊 Dashboard',
     icon: DashboardIcon,
     path: '/admin',
     roles: ['ADMIN'],
     description: 'Vista general del sistema'
   },
-
-  // ✅ "Productos" ya no va como item normal: ahora es un submenú colapsable.
-
-  {
-    id: 'users',
-    label: 'Usuarios',
-    icon: UsersIcon,
-    path: '/admin/users',
-    roles: ['ADMIN'],
-    description: 'Gestión de usuarios'
-  },
-
-  // ✅ "Categorías" ya NO va aquí: se movió dentro de Productos.
-
   {
     id: 'inventory',
-    label: 'Inventario',
+    label: '📋 Inventario',
     icon: InventoryIcon,
     path: '/admin/inventory',
     roles: ['ADMIN'],
     description: 'Control de stock'
   },
   {
-    id: 'orders',
-    label: 'Ventas',
-    icon: OrdersIcon,
-    path: '/admin/sales',
-    roles: ['ADMIN', 'MANAGER', 'CASHIER'],
-    description: 'Realizar pedidos'
-  },
-  {
     id: 'reports',
-    label: 'Reportes',
+    label: '📈 Reportes',
     icon: ReportsIcon,
     path: '/admin/reports',
     roles: ['ADMIN'],
     description: 'Reportes y estadísticas'
+  },
+  {
+    id: 'users',
+    label: '👥 Usuarios',
+    icon: UsersIcon,
+    path: '/admin/users',
+    roles: ['ADMIN'],
+    description: 'Gestión de usuarios'
+  }
+];
+
+// ✅ Subitems del collapsable "Ventas"
+const salesSubItems: MenuItem[] = [
+  {
+    id: 'sales-new',
+    label: 'Realizar Venta',
+    icon: SalesIcon,
+    path: '/admin/sales',
+    roles: ['ADMIN', 'MANAGER', 'CASHIER'],
+    description: 'Crear nueva venta'
+  },
+  {
+    id: 'sales-view',
+    label: 'Ver Ventas',
+    icon: ViewSalesIcon,
+    path: '/admin/sales/view',
+    roles: ['ADMIN', 'MANAGER'],
+    description: 'Ver ventas guardadas'
   }
 ];
 
@@ -281,6 +298,7 @@ interface SidebarProps {
 export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [productsOpen, setProductsOpen] = useState(true);
+  const [salesOpen, setSalesOpen] = useState(true);
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -289,6 +307,7 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
 
   const filteredMenuItems = menuItems.filter((item) => item.roles.includes(user.role));
   const filteredProductSubItems = productSubItems.filter((item) => item.roles.includes(user.role));
+  const filteredSalesSubItems = salesSubItems.filter((item) => item.roles.includes(user.role));
 
   const handleLogout = () => {
     logout();
@@ -308,6 +327,7 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   };
 
   const isProductsSectionActive = filteredProductSubItems.some((s) => isActive(s.path));
+  const isSalesSectionActive = filteredSalesSubItems.some((s) => isActive(s.path));
 
   return (
     <>
@@ -390,8 +410,8 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
 
         {/* Menu Items */}
         <nav className="flex-1 p-4 overflow-y-auto">
-          {/* Items normales */}
-          {filteredMenuItems.map((item) => {
+          {/* 🍹 Carta/Menú */}
+          {filteredMenuItems.filter(item => item.id === 'menu').map((item) => {
             const Icon = item.icon;
             return (
               <button
@@ -402,13 +422,76 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                     : 'text-purple-200 hover:bg-white/10 hover:text-white'
                   }`}
               >
-                <Icon className="w-5 h-5" />
                 {!collapsed && <span className="font-medium">{item.label}</span>}
               </button>
             );
           })}
 
-          {/* ✅ Collapsable: Productos */}
+          {/* 📊 Dashboard */}
+          {filteredMenuItems.filter(item => item.id === 'dashboard').map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleNavigation(item.path)}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl mb-2 transition-all duration-200 ${isActive(item.path)
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-purple-200 hover:bg-white/10 hover:text-white'
+                  }`}
+              >
+                {!collapsed && <span className="font-medium">{item.label}</span>}
+              </button>
+            );
+          })}
+
+          {/* 🛍️ Ventas (collapsable) */}
+          {filteredSalesSubItems.length > 0 && (
+            <div className="mb-2">
+              <button
+                onClick={() => setSalesOpen((v) => !v)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${isSalesSectionActive
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-purple-200 hover:bg-white/10 hover:text-white'
+                  }`}
+              >
+                <div className="flex items-center space-x-3">
+                  {!collapsed && <span className="font-medium">🛍️ Ventas</span>}
+                </div>
+
+                {!collapsed && (
+                  <ChevronDownIcon
+                    className={`w-5 h-5 transition-transform duration-200 ${salesOpen ? 'rotate-180' : 'rotate-0'}`}
+                  />
+                )}
+              </button>
+
+              {/* Submenu Ventas */}
+              {!collapsed && (
+                <div className={`mt-2 ml-4 pl-2 border-l border-white/10 transition-all duration-300 overflow-hidden ${
+                  salesOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                  {filteredSalesSubItems.map((sub) => {
+                    const SubIcon = sub.icon;
+                    return (
+                      <button
+                        key={sub.path}
+                        onClick={() => handleNavigation(sub.path)}
+                        className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl mb-2 transition-all duration-200 ${isActive(sub.path)
+                            ? 'bg-white/15 text-white'
+                            : 'text-purple-200 hover:bg-white/10 hover:text-white'
+                          }`}
+                      >
+                        <SubIcon className="w-5 h-5" />
+                        <span className="font-medium">{sub.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 📦 Productos (collapsable) */}
           {filteredProductSubItems.length > 0 && (
             <div className="mb-2">
               <button
@@ -419,8 +502,7 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                   }`}
               >
                 <div className="flex items-center space-x-3">
-                  <ProductIcon className="w-5 h-5" />
-                  {!collapsed && <span className="font-medium">Productos</span>}
+                  {!collapsed && <span className="font-medium">📦 Productos</span>}
                 </div>
 
                 {!collapsed && (
@@ -430,9 +512,11 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                 )}
               </button>
 
-              {/* Submenu */}
-              {!collapsed && productsOpen && (
-                <div className="mt-2 ml-4 pl-2 border-l border-white/10">
+              {/* Submenu Productos */}
+              {!collapsed && (
+                <div className={`mt-2 ml-4 pl-2 border-l border-white/10 transition-all duration-300 overflow-hidden ${
+                  productsOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                }`}>
                   {filteredProductSubItems.map((sub) => {
                     const SubIcon = sub.icon;
                     return (
@@ -453,6 +537,57 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               )}
             </div>
           )}
+
+          {/* 📋 Inventario */}
+          {filteredMenuItems.filter(item => item.id === 'inventory').map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleNavigation(item.path)}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl mb-2 transition-all duration-200 ${isActive(item.path)
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-purple-200 hover:bg-white/10 hover:text-white'
+                  }`}
+              >
+                {!collapsed && <span className="font-medium">{item.label}</span>}
+              </button>
+            );
+          })}
+
+          {/* 📈 Reportes */}
+          {filteredMenuItems.filter(item => item.id === 'reports').map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleNavigation(item.path)}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl mb-2 transition-all duration-200 ${isActive(item.path)
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-purple-200 hover:bg-white/10 hover:text-white'
+                  }`}
+              >
+                {!collapsed && <span className="font-medium">{item.label}</span>}
+              </button>
+            );
+          })}
+
+          {/* 👥 Usuarios */}
+          {filteredMenuItems.filter(item => item.id === 'users').map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleNavigation(item.path)}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl mb-2 transition-all duration-200 ${isActive(item.path)
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-purple-200 hover:bg-white/10 hover:text-white'
+                  }`}
+              >
+                {!collapsed && <span className="font-medium">{item.label}</span>}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Logout Button */}

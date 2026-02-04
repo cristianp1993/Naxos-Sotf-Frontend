@@ -5,6 +5,7 @@ import { fetchMenu } from '@/services/api';
 import { salesService } from '@/services/salesService';
 import type { MenuData, Product, Variant } from '@/types/menu';
 import type { CreateFullSalePayload } from '@/services/salesService';
+import { useToast } from '@/components/ui/toast';
 
 type CartItem = {
   productId: number;
@@ -28,7 +29,9 @@ export default function SalesPage() {
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
   const [paymentMethod, setPaymentMethod] = useState<'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA' | 'OTRO'>('EFECTIVO');
+  const [observation, setObservation] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+  const toast = useToast();
 
   // Cargar menú
   useEffect(() => {
@@ -120,7 +123,23 @@ export default function SalesPage() {
   };
 
   const addToCart = () => {
-    if (!selectedProduct || !selectedVariant) return;
+    if (!selectedProduct || !selectedVariant) {
+      toast.error('Debe seleccionar un producto y un tamaño');
+      return;
+    }
+
+    // Validar si el producto tiene sabores disponibles y no se ha seleccionado uno
+    const availableFlavors = getFlavorsForProduct(selectedProduct.product_id);
+    if (availableFlavors.length > 0 && !selectedFlavor) {
+      toast.error('Debe seleccionar un sabor para este producto');
+      return;
+    }
+
+    // Validar cantidad
+    if (!quantity || quantity <= 0) {
+      toast.error('Debe ingresar una cantidad válida');
+      return;
+    }
 
     const unitPrice = Number(selectedVariant.precio_actual ?? 0);
     const lineTotal = Number((unitPrice * quantity).toFixed(2));
@@ -137,6 +156,10 @@ export default function SalesPage() {
     };
 
     setCart((prev) => [...prev, newItem]);
+    
+    // Mostrar toast de éxito
+    toast.success(`${selectedVariant.variant_name} ${selectedFlavor ? `(${selectedFlavor})` : ''} agregado al carrito`);
+    
     // Reset selection
     setSelectedProduct(null);
     setSelectedFlavor(null);
@@ -158,6 +181,24 @@ export default function SalesPage() {
 
   const goBackToSelection = () => {
     setActiveStep('select');
+    setSubmitting(false);
+  };
+
+  const getFlavorIdByName = (flavorName: string, productId: number): number | null => {
+    if (!flavorName || !productId) return null;
+    
+    const flavorData = menuData?.sabores?.find((f) => f.product_id == productId);
+    if (!flavorData) return null;
+    
+    console.log('🔍 DEBUG - Flavor data completo para producto', productId, ':', JSON.stringify(flavorData, null, 2));
+    console.log('🔍 DEBUG - Buscando sabor:', flavorName);
+    
+    // Buscar el flavor_id por nombre usando los IDs reales
+    const flavorWithId = flavorData.sabores_con_ids?.find((f: any) => f.name === flavorName);
+    const result = flavorWithId ? flavorWithId.flavor_id : null;
+    
+    console.log('🔍 DEBUG - Flavor ID real encontrado:', result);
+    return result;
   };
 
   const handleSubmitSale = async () => {
@@ -166,10 +207,11 @@ export default function SalesPage() {
     setSubmitting(true);
     try {
       const payload: CreateFullSalePayload = {
-        location_id: 1, // ← Ajusta según tu lógica (puede venir de perfil o settings)
+        location_id: 1, // Por defecto location_id = 1
+        observation: observation.trim() || null,
         items: cart.map((item) => ({
           variant_id: item.variantId,
-          flavor_id: item.flavor ? null : null, // Backend acepta null si no hay sabor
+          flavor_name: item.flavor || null, // Enviar nombre en lugar de ID
           quantity: item.quantity,
           unit_price: item.unitPrice,
         })),
@@ -182,12 +224,18 @@ export default function SalesPage() {
         ],
       };
 
+      console.log('� DEBUG - Frontend enviando observation:', observation);
+      console.log('🔍 DEBUG - Payload observation:', payload.observation);
+
+      console.log('�� Enviando venta:', JSON.stringify(payload, null, 2));
       await salesService.createFullSale(payload);
-      alert('¡Venta registrada exitosamente! 🎉');
+      toast.success('¡Venta registrada exitosamente! ');
       setCart([]);
+      setObservation('');
       setActiveStep('select');
     } catch (err: any) {
-      alert(err.message || 'Error al registrar la venta');
+      console.error('❌ Error en venta:', err);
+      toast.error(err.message || 'Error al registrar la venta');
     } finally {
       setSubmitting(false);
     }
@@ -308,7 +356,7 @@ export default function SalesPage() {
                           onClick={() => handleSelectFlavor(flavor)}
                           className={`px-4 py-2 rounded-full font-black text-sm transition-all ${
                             selectedFlavor === flavor
-                              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                              ? 'bg-gradient-to-r from-green-400 to-emerald-400 text-white shadow-lg border-2 border-green-300'
                               : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
                           }`}
                         >
@@ -334,7 +382,7 @@ export default function SalesPage() {
                           disabled={!price}
                           className={`w-full text-left p-4 rounded-2xl border transition-all ${
                             selectedVariant?.variant_id === v.variant_id
-                              ? 'border-purple-400 bg-purple-500/20'
+                              ? 'border-green-400 bg-green-500/20 shadow-lg'
                               : 'border-white/20 bg-white/10 hover:bg-white/20'
                           } ${!price ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
@@ -414,48 +462,83 @@ export default function SalesPage() {
               onClick={goBackToSelection}
               className="flex items-center text-purple-300 hover:text-purple-100 font-bold mb-4"
             >
-              ← Volver a productos
+              ← Volver a selección
             </button>
 
-            <div className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-lg shadow-xl">
-              <h2 className="text-2xl font-black text-purple-100 mb-4">Método de pago</h2>
+            {/* Resumen del carrito */}
+            <div className="rounded-3xl border border-white/20 bg-white/10 p-4 backdrop-blur-lg shadow-xl">
+              <h3 className="text-lg font-black text-purple-100 mb-3">Resumen del pedido</h3>
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                {cart.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-sm">
+                    <span className="text-purple-200">
+                      {item.quantity}x {item.variantName} {item.flavor ? `(${item.flavor})` : ''}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-bold">{formatRD(item.lineTotal)}</span>
+                      <button
+                        onClick={() => removeFromCart(idx)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 pt-3 border-t border-white/20 text-right">
+                <span className="text-2xl font-black text-white">{formatRD(total)}</span>
+              </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-6">
+            {/* Método de pago */}
+            <div>
+              <label className="block text-purple-200 font-bold mb-2">Método de pago</label>
+              <div className="grid grid-cols-2 gap-2">
                 {(['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'OTRO'] as const).map((method) => (
                   <button
                     key={method}
                     onClick={() => setPaymentMethod(method)}
-                    className={`p-4 rounded-xl border font-bold transition-all ${
+                    className={`p-3 rounded-xl font-bold transition-all ${
                       paymentMethod === method
-                        ? 'border-purple-400 bg-purple-500/20 text-white'
-                        : 'border-white/20 bg-white/10 text-purple-200 hover:bg-white/20'
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-2 border-green-300'
+                        : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
                     }`}
                   >
-                    {method === 'EFECTIVO' && '💵 Efectivo'}
-                    {method === 'TARJETA' && '💳 Tarjeta'}
-                    {method === 'TRANSFERENCIA' && '📱 Transferencia'}
-                    {method === 'OTRO' && '❓ Otro'}
+                    {method === 'EFECTIVO' && '💵'}
+                    {method === 'TARJETA' && '💳'}
+                    {method === 'TRANSFERENCIA' && '📱'}
+                    {method === 'OTRO' && '💰'}
+                    {' '}{method}
                   </button>
                 ))}
               </div>
-
-              <div className="text-center mb-6">
-                <p className="text-purple-200">Total a pagar:</p>
-                <p className="text-3xl font-black text-white">{formatRD(total)}</p>
-              </div>
-
-              <button
-                onClick={handleSubmitSale}
-                disabled={submitting || cart.length === 0}
-                className={`w-full py-4 font-black rounded-xl transition-all ${
-                  submitting
-                    ? 'bg-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600'
-                }`}
-              >
-                {submitting ? 'Procesando...' : '✅ Confirmar Venta'}
-              </button>
             </div>
+
+            {/* Observación */}
+            <div>
+              <label className="block text-purple-200 font-bold mb-2">Observación (opcional)</label>
+              <textarea
+                value={observation}
+                onChange={(e) => setObservation(e.target.value)}
+                placeholder="Ej: Venta ya realizada, cliente especial, etc..."
+                rows={3}
+                className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+              />
+            </div>
+
+            {/* Botón de confirmación */}
+            <button
+              onClick={handleSubmitSale}
+              disabled={submitting || cart.length === 0}
+              className={`w-full py-4 font-black rounded-xl transition-all ${
+                submitting
+                  ? 'bg-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600'
+              }`}
+            >
+              {submitting ? 'Procesando...' : '✅ Confirmar Venta'}
+            </button>
           </div>
         )}
       </main>
@@ -481,6 +564,9 @@ export default function SalesPage() {
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
       `}</style>
+
+      {/* Toast Notifications */}
+      <toast.ToastComponent />
     </div>
   );
 }
