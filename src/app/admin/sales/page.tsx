@@ -193,11 +193,11 @@ export default function SalesPage() {
     console.log('🔍 DEBUG - Flavor data completo para producto', productId, ':', JSON.stringify(flavorData, null, 2));
     console.log('🔍 DEBUG - Buscando sabor:', flavorName);
     
-    // Buscar el flavor_id por nombre usando los IDs reales
-    const flavorWithId = flavorData.sabores_con_ids?.find((f: any) => f.name === flavorName);
-    const result = flavorWithId ? flavorWithId.flavor_id : null;
+    // Buscar el sabor en el array de sabores_activos
+    const flavorIndex = flavorData.sabores_activos?.indexOf(flavorName);
+    const result = flavorIndex !== undefined && flavorIndex >= 0 ? flavorIndex + 1 : null; // +1 porque los IDs empiezan en 1
     
-    console.log('🔍 DEBUG - Flavor ID real encontrado:', result);
+    console.log('🔍 DEBUG - Flavor ID encontrado:', result);
     return result;
   };
 
