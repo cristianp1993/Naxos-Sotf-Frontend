@@ -28,20 +28,22 @@ export default function ViewSalesPage() {
       // Si data es un objeto con propiedad sales, usar esa
       // Si es un array directamente, usarlo
       // Si es un objeto con otra estructura, buscar el array
-      let salesArray = [];
+      let salesArray: Sale[] = [];
       if (Array.isArray(data)) {
         salesArray = data;
-      } else if (data && typeof data === 'object') {
+      } else if (data && typeof data === 'object' && data !== null) {
+        // Type assertion para poder acceder a las propiedades
+        const dataObj = data as Record<string, unknown>;
         // Buscar propiedades que puedan contener el array de ventas
-        if (Array.isArray(data.sales)) {
-          salesArray = data.sales;
-        } else if (Array.isArray(data.data)) {
-          salesArray = data.data;
-        } else if (Array.isArray(data.results)) {
-          salesArray = data.results;
+        if (Array.isArray(dataObj.sales)) {
+          salesArray = dataObj.sales as Sale[];
+        } else if (Array.isArray(dataObj.data)) {
+          salesArray = dataObj.data as Sale[];
+        } else if (Array.isArray(dataObj.results)) {
+          salesArray = dataObj.results as Sale[];
         } else {
           // Si no encuentra arrays, mostrar el objeto completo para depuración
-          console.log('Estructura del objeto:', Object.keys(data));
+          console.log('Estructura del objeto:', Object.keys(dataObj));
           salesArray = [];
         }
       }
