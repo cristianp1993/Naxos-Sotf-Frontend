@@ -16,6 +16,7 @@ import naxos9 from '@/assets/Slider/naxos9.jpeg';
 import naxos10 from '@/assets/Slider/naxos10.jpeg';
 import naxos11 from '@/assets/Slider/naxos11.jpeg';
 import naxos12 from '@/assets/Slider/naxos12.jpeg';
+import whatsappIcon from '@/assets/General/whatsapp.png';
 
 type ApiResponse = { message?: string; menu?: MenuData } | MenuData;
 
@@ -431,6 +432,44 @@ export default function MenuPage() {
           <p className="mt-1 text-purple-300 text-sm">Hecho con amor • sabores que brillan ✨</p>
         </div>
       </footer>
+
+      <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center gap-4">
+        <a
+          href="https://www.instagram.com/naxoscoctels/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group"
+        >
+          <div className="flex flex-col items-center gap-2 animate-pulse">
+            <div className="rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 p-1 shadow-2xl shadow-purple-500/25 group-hover:scale-110 transition-transform duration-300">
+              <div className="rounded-2xl bg-gradient-to-r from-purple-900 via-pink-900 to-orange-800 px-4 py-3">
+                <span className="text-2xl">📷</span>
+              </div>
+            </div>
+            <span className="text-xs font-black text-purple-200 bg-white/10 backdrop-blur-sm px-2 py-1 rounded-full border border-white/20 whitespace-nowrap">
+              Síguenos
+            </span>
+          </div>
+        </a>
+
+        <a
+          href="https://wa.me/573245072414"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group"
+        >
+          <div className="flex flex-col items-center gap-2 animate-pulse">
+            <div className="rounded-2xl bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 p-1 shadow-2xl shadow-green-500/25 group-hover:scale-110 transition-transform duration-300">
+              <div className="rounded-2xl bg-gradient-to-r from-green-800 via-green-900 to-emerald-900 px-4 py-3">
+                <img src={whatsappIcon.src} alt="WhatsApp" className="w-6 h-6" />
+              </div>
+            </div>
+            <span className="text-xs font-black text-purple-200 bg-white/10 backdrop-blur-sm px-2 py-1 rounded-full border border-white/20 whitespace-nowrap">
+              Pedir
+            </span>
+          </div>
+        </a>
+      </div>
 
       <style jsx global>{`
         @keyframes blob {
