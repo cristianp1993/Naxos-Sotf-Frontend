@@ -27,7 +27,7 @@ export default function SalesPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedFlavor, setSelectedFlavor] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
-  const [quantity, setQuantity] = useState<number>(1);
+  const [quantity, setQuantity] = useState<string>('1');
   const [paymentMethod, setPaymentMethod] = useState<'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA' | 'OTRO'>('EFECTIVO');
   const [observation, setObservation] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
@@ -111,7 +111,7 @@ export default function SalesPage() {
     setSelectedProduct(product);
     setSelectedFlavor(null);
     setSelectedVariant(null);
-    setQuantity(1);
+    setQuantity('1');
   };
 
   const handleSelectFlavor = (flavor: string) => {
@@ -136,13 +136,14 @@ export default function SalesPage() {
     }
 
     // Validar cantidad
-    if (!quantity || quantity <= 0) {
+    const quantityNum = parseInt(quantity, 10);
+    if (!quantity || quantityNum <= 0 || isNaN(quantityNum)) {
       toast.error('Debe ingresar una cantidad válida');
       return;
     }
 
     const unitPrice = Number(selectedVariant.precio_actual ?? 0);
-    const lineTotal = Number((unitPrice * quantity).toFixed(2));
+    const lineTotal = Number((unitPrice * quantityNum).toFixed(2));
 
     const newItem: CartItem = {
       productId: selectedProduct.product_id,
@@ -150,7 +151,7 @@ export default function SalesPage() {
       variantId: selectedVariant.variant_id,
       variantName: selectedVariant.variant_name,
       flavor: selectedFlavor,
-      quantity,
+      quantity: quantityNum,
       unitPrice,
       lineTotal,
     };
@@ -160,11 +161,19 @@ export default function SalesPage() {
     // Mostrar toast de éxito
     toast.success(`${selectedVariant.variant_name} ${selectedFlavor ? `(${selectedFlavor})` : ''} agregado al carrito`);
     
+    // Auto-scroll al carrito
+    setTimeout(() => {
+      const cartElement = document.getElementById('cart-summary');
+      if (cartElement) {
+        cartElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+    
     // Reset selection
     setSelectedProduct(null);
     setSelectedFlavor(null);
     setSelectedVariant(null);
-    setQuantity(1);
+    setQuantity('1');
     setActiveStep('select');
   };
 
@@ -307,7 +316,7 @@ export default function SalesPage() {
       <main className="mx-auto max-w-3xl px-4 py-6 relative z-10">
         {/* Carrito resumen (siempre visible en móvil) */}
         {cart.length > 0 && (
-          <div className="mb-6 rounded-3xl border border-white/20 bg-white/10 p-4 backdrop-blur-lg shadow-xl">
+          <div id="cart-summary" className="mb-6 rounded-3xl border border-white/20 bg-white/10 p-4 backdrop-blur-lg shadow-xl">
             <h3 className="text-lg font-black text-purple-100 mb-2">Carrito</h3>
             <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
               {cart.map((item, idx) => (
@@ -410,7 +419,10 @@ export default function SalesPage() {
                         <div className="flex items-center">
                           <button
                             type="button"
-                            onClick={() => setQuantity(Math.max(0.1, quantity - 1))}
+                            onClick={() => {
+                              const currentQty = parseInt(quantity, 10) || 1;
+                              setQuantity(String(Math.max(1, currentQty - 1)));
+                            }}
                             className="p-3 rounded-l-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -419,24 +431,21 @@ export default function SalesPage() {
                           </button>
                           <input
                             type="number"
-                            min="0.1"
-                            step="0.1"
+                            min="1"
+                            step="1"
                             value={quantity}
                             onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === '' || value === null || value === undefined) {
-                                setQuantity(0);
-                              } else {
-                                const numValue = parseFloat(value);
-                                setQuantity(isNaN(numValue) ? 1 : numValue);
-                              }
+                              setQuantity(e.target.value);
                             }}
                             onFocus={(e) => e.target.select()}
                             className="flex-1 p-3 bg-white/10 border-t border-b border-white/20 text-white text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
                           />
                           <button
                             type="button"
-                            onClick={() => setQuantity(quantity + 1)}
+                            onClick={() => {
+                              const currentQty = parseInt(quantity, 10) || 1;
+                              setQuantity(String(currentQty + 1));
+                            }}
                             className="p-3 rounded-r-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -496,32 +505,6 @@ export default function SalesPage() {
               ← Volver a selección
             </button>
 
-            {/* Resumen del carrito */}
-            <div className="rounded-3xl border border-white/20 bg-white/10 p-4 backdrop-blur-lg shadow-xl">
-              <h3 className="text-lg font-black text-purple-100 mb-3">Resumen del pedido</h3>
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                {cart.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center text-sm">
-                    <span className="text-purple-200">
-                      {item.quantity}x {item.variantName} {item.flavor ? `(${item.flavor})` : ''}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-white font-bold">{formatRD(item.lineTotal)}</span>
-                      <button
-                        onClick={() => removeFromCart(idx)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 pt-3 border-t border-white/20 text-right">
-                <span className="text-2xl font-black text-white">{formatRD(total)}</span>
-              </div>
-            </div>
-
             {/* Método de pago */}
             <div>
               <label className="block text-purple-200 font-bold mb-2">Método de pago</label>
@@ -530,17 +513,21 @@ export default function SalesPage() {
                   <button
                     key={method}
                     onClick={() => setPaymentMethod(method)}
-                    className={`p-3 rounded-xl font-bold transition-all ${
+                    className={`p-3 rounded-xl font-bold transition-all flex flex-col items-center justify-center min-h-[60px] ${
                       paymentMethod === method
                         ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-2 border-green-300'
                         : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
                     }`}
                   >
-                    {method === 'EFECTIVO' && '💵'}
-                    {method === 'TARJETA' && '💳'}
-                    {method === 'TRANSFERENCIA' && '📱'}
-                    {method === 'OTRO' && '💰'}
-                    {' '}{method}
+                    <span className="text-lg mb-1">
+                      {method === 'EFECTIVO' && '💵'}
+                      {method === 'TARJETA' && '💳'}
+                      {method === 'TRANSFERENCIA' && '📱'}
+                      {method === 'OTRO' && '💰'}
+                    </span>
+                    <span className="text-xs sm:text-sm leading-tight text-center break-words max-w-full">
+                      {method}
+                    </span>
                   </button>
                 ))}
               </div>

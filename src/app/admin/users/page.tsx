@@ -188,7 +188,7 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="text-white">Cargando usuarios...</div>
       </div>
     );
@@ -196,14 +196,14 @@ export default function UsersPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="text-red-400">{error}</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6 w-full max-w-full overflow-x-hidden">
+    <div className="space-y-6 p-4 md:p-6 w-full max-w-full overflow-x-hidden min-h-full">
       {/* Header */}
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl md:rounded-3xl p-4 md:p-6 border border-white/20">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -348,55 +348,55 @@ export default function UsersPage() {
       {/* Create User Modal */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-white/20">
+          <div className="bg-slate-800 rounded-2xl p-4 sm:p-6 w-full max-w-sm sm:max-w-md mx-auto border border-white/20 max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-white mb-4">Crear Nuevo Usuario</h3>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Documento</label>
+                <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Documento</label>
                 <input
                   type="text"
                   value={formData.username}
                   onChange={(e) => setFormData({...formData, username: e.target.value})}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="Ingrese número de documento"
                 />
               </div>
               <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Nombre Completo</label>
+                <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Nombre Completo</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="Ingrese nombre completo"
                 />
               </div>
               <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Email</label>
+                <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Email</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="correo@ejemplo.com"
                 />
               </div>
               <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Contraseña</label>
+                <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Contraseña</label>
                 <input
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="Ingrese contraseña"
                 />
               </div>
               <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Rol</label>
+                <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Rol</label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value as 'ADMIN' | 'OPERARIO'})}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="ADMIN">Administrador</option>
                   <option value="OPERARIO">Operario</option>
@@ -427,53 +427,53 @@ export default function UsersPage() {
       {/* Edit User Modal */}
       {isEditModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-white/20">
+          <div className="bg-slate-800 rounded-2xl p-4 sm:p-6 w-full max-w-sm sm:max-w-md mx-auto border border-white/20 max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-white mb-4">Editar Usuario</h3>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Documento</label>
+                <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Documento</label>
                 <input
                   type="text"
                   value={selectedUser.username}
                   onChange={(e) => setSelectedUser({...selectedUser, username: e.target.value})}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
               <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Nombre Completo</label>
+                <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Nombre Completo</label>
                 <input
                   type="text"
                   value={selectedUser.name || ''}
                   onChange={(e) => setSelectedUser({...selectedUser, name: e.target.value})}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
               <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Email</label>
+                <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Email</label>
                 <input
                   type="email"
                   value={selectedUser.email}
                   onChange={(e) => setSelectedUser({...selectedUser, email: e.target.value})}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
               <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Rol</label>
+                <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Rol</label>
                 <select
                   value={selectedUser.role}
                   onChange={(e) => setSelectedUser({...selectedUser, role: e.target.value as 'ADMIN' | 'OPERARIO'})}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="ADMIN">Administrador</option>
                   <option value="OPERARIO">Operario</option>
                 </select>
               </div>
               <div>
-                <label className="block text-purple-200 text-sm font-medium mb-2">Estado</label>
+                <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Estado</label>
                 <select
                   value={selectedUser.is_active ? 'true' : 'false'}
                   onChange={(e) => setSelectedUser({...selectedUser, is_active: e.target.value === 'true'})}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="true">Activo</option>
                   <option value="false">Inactivo</option>
@@ -504,7 +504,7 @@ export default function UsersPage() {
       {/* Detail Modal */}
       {isDetailModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-white/20">
+          <div className="bg-slate-800 rounded-2xl p-4 sm:p-6 w-full max-w-sm sm:max-w-md mx-auto border border-white/20 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-white">Detalles del Usuario</h3>
               <button
@@ -517,18 +517,18 @@ export default function UsersPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
                 <label className="block text-purple-300 text-sm font-medium mb-1">Documento</label>
-                <div className="text-white font-medium">{selectedUser.username}</div>
+                <div className="text-white font-medium text-sm sm:text-base">{selectedUser.username}</div>
               </div>
               <div>
                 <label className="block text-purple-300 text-sm font-medium mb-1">Nombre Completo</label>
-                <div className="text-white">{selectedUser.name || 'Sin nombre'}</div>
+                <div className="text-white text-sm sm:text-base">{selectedUser.name || 'Sin nombre'}</div>
               </div>
               <div>
                 <label className="block text-purple-300 text-sm font-medium mb-1">Email</label>
-                <div className="text-white">{selectedUser.email}</div>
+                <div className="text-white text-sm sm:text-base break-words">{selectedUser.email}</div>
               </div>
               <div>
                 <label className="block text-purple-300 text-sm font-medium mb-1">Rol</label>
@@ -552,11 +552,11 @@ export default function UsersPage() {
               </div>
               <div>
                 <label className="block text-purple-300 text-sm font-medium mb-1">Fecha de Creación</label>
-                <div className="text-white">{formatDate(selectedUser.created_at)}</div>
+                <div className="text-white text-sm sm:text-base">{formatDate(selectedUser.created_at)}</div>
               </div>
               <div>
                 <label className="block text-purple-300 text-sm font-medium mb-1">Última Actualización</label>
-                <div className="text-white">{formatDate(selectedUser.updated_at)}</div>
+                <div className="text-white text-sm sm:text-base">{formatDate(selectedUser.updated_at)}</div>
               </div>
             </div>
 
@@ -575,7 +575,7 @@ export default function UsersPage() {
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-white/20">
+          <div className="bg-slate-800 rounded-2xl p-4 sm:p-6 w-full max-w-sm sm:max-w-md mx-auto border border-white/20">
             <h3 className="text-xl font-bold text-white mb-4">Confirmar Eliminación</h3>
             <p className="text-purple-200 mb-6">
               ¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.

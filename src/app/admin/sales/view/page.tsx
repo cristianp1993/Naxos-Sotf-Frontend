@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { salesService, type Sale } from '@/services/salesService';
+import { useToast } from '@/components/ui/toast';
 
 export default function ViewSalesPage() {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -12,6 +13,7 @@ export default function ViewSalesPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<number | null>(null);
+  const toast = useToast();
 
   useEffect(() => {
     loadSales();
@@ -61,13 +63,28 @@ export default function ViewSalesPage() {
     if (!saleToDelete) return;
     
     try {
-      await salesService.deleteSale(saleToDelete);
+      const response = await salesService.deleteSale(saleToDelete);
       setSales(sales.filter(sale => sale.sale_id !== saleToDelete));
       setIsDeleteModalOpen(false);
       setSaleToDelete(null);
-    } catch (err) {
-      setError('Error al eliminar la venta');
-      console.error(err);
+      
+      // Mostrar toast de éxito con información detallada
+      const deletedItems = response.deleted_items || 0;
+      const deletedPayments = response.deleted_payments || 0;
+      toast.success(
+        `Venta #${saleToDelete} eliminada correctamente` + 
+        (deletedItems > 0 || deletedPayments > 0 
+          ? ` (${deletedItems} productos, ${deletedPayments} pagos)`
+          : '')
+      );
+    } catch (err: any) {
+      console.error('Error deleting sale:', err);
+      setIsDeleteModalOpen(false);
+      setSaleToDelete(null);
+      
+      // Mostrar toast de error con mensaje específico
+      const errorMessage = err?.message || err?.error || 'Error al eliminar la venta';
+      toast.error(errorMessage);
     }
   };
 
@@ -228,15 +245,15 @@ export default function ViewSalesPage() {
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-white/20">
-            <h3 className="text-xl font-bold text-white mb-4">Confirmar Eliminación</h3>
-            <p className="text-purple-200 mb-6">
+          <div className="bg-slate-800 rounded-2xl p-4 sm:p-6 w-full max-w-sm sm:max-w-md mx-auto border border-white/20">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">Confirmar Eliminación</h3>
+            <p className="text-purple-200 text-sm sm:text-base mb-4 sm:mb-6">
               ¿Estás seguro de que deseas eliminar esta venta? Esta acción no se puede deshacer.
             </p>
-            <div className="flex space-x-3">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
               <button
                 onClick={handleDelete}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-xl transition-colors"
+                className="w-full sm:w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 sm:py-3 px-4 rounded-xl transition-colors"
               >
                 Eliminar
               </button>
@@ -245,7 +262,7 @@ export default function ViewSalesPage() {
                   setIsDeleteModalOpen(false);
                   setSaleToDelete(null);
                 }}
-                className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 px-4 rounded-xl transition-colors"
+                className="w-full sm:w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2 sm:py-3 px-4 rounded-xl transition-colors"
               >
                 Cancelar
               </button>
@@ -363,33 +380,33 @@ export default function ViewSalesPage() {
       {/* Detail Modal */}
       {isDetailModalOpen && selectedSale && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-4xl w-full border border-white/20 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-white">Detalles de Venta #{selectedSale.sale_id}</h3>
+          <div className="bg-slate-800 rounded-2xl p-4 sm:p-6 w-full max-w-sm sm:max-w-md lg:max-w-4xl mx-auto border border-white/20 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-bold text-white">Detalles de Venta #{selectedSale.sale_id}</h3>
               <button
                 onClick={() => setIsDetailModalOpen(false)}
-                className="text-purple-300 hover:text-white transition-colors"
+                className="text-purple-300 hover:text-white transition-colors p-1"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             {/* Sale Header */}
-            <div className="bg-white/5 rounded-xl p-4 mb-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white/5 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-purple-300 text-xs font-medium mb-1">ID Venta</label>
-                  <div className="text-white font-bold">#{selectedSale.sale_id}</div>
+                  <div className="text-white font-bold text-sm sm:text-base">#{selectedSale.sale_id}</div>
                 </div>
                 <div>
                   <label className="block text-purple-300 text-xs font-medium mb-1">Fecha</label>
-                  <div className="text-white">{formatDate(selectedSale.opened_at)}</div>
+                  <div className="text-white text-xs sm:text-sm">{formatDate(selectedSale.opened_at)}</div>
                 </div>
                 <div>
                   <label className="block text-purple-300 text-xs font-medium mb-1">Total</label>
-                  <div className="text-white font-bold text-lg">{formatCurrency(selectedSale.total)}</div>
+                  <div className="text-white font-bold text-sm sm:text-lg">{formatCurrency(selectedSale.total)}</div>
                 </div>
                 <div>
                   <label className="block text-purple-300 text-xs font-medium mb-1">Estado</label>
@@ -403,39 +420,39 @@ export default function ViewSalesPage() {
                 </div>
               </div>
               {selectedSale.observation && (
-                <div className="mt-4">
+                <div className="mt-3 sm:mt-4">
                   <label className="block text-purple-300 text-xs font-medium mb-1">Observación</label>
-                  <div className="text-purple-200">{selectedSale.observation}</div>
+                  <div className="text-purple-200 text-xs sm:text-sm break-words">{selectedSale.observation}</div>
                 </div>
               )}
             </div>
 
             {/* Products Section */}
-            <div className="mb-6">
-              <h4 className="text-white font-bold text-lg mb-4 flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mb-4 sm:mb-6">
+              <h4 className="text-white font-bold text-base sm:text-lg mb-3 sm:mb-4 flex items-center">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
-                Productos Vendidos
+                <span className="text-sm sm:text-base">Productos Vendidos</span>
               </h4>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {selectedSale.items && Array.isArray(selectedSale.items) && selectedSale.items.length > 0 ? (
                   selectedSale.items.map((item, index) => (
-                    <div key={index} className="bg-white/5 rounded-xl p-4 border border-white/10">
-                      <div className="flex justify-between items-start">
+                    <div key={index} className="bg-white/5 rounded-xl p-3 sm:p-4 border border-white/10">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                         <div className="flex-1">
-                          <div className="text-white font-bold text-lg mb-2">
+                          <div className="text-white font-bold text-sm sm:text-lg mb-2">
                             {item.product_name || 'Producto sin nombre'}
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                             <div>
                               <span className="text-purple-300">Tamaño/Variante:</span>
-                              <div className="text-white font-medium">{item.variant_name || 'N/A'}</div>
+                              <div className="text-white font-medium break-words">{item.variant_name || 'N/A'}</div>
                             </div>
                             {item.flavor_name && (
                               <div>
                                 <span className="text-purple-300">Sabor:</span>
-                                <div className="text-white font-medium">{item.flavor_name}</div>
+                                <div className="text-white font-medium break-words">{item.flavor_name}</div>
                               </div>
                             )}
                             <div>
@@ -448,16 +465,16 @@ export default function ViewSalesPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="text-right ml-4">
-                          <div className="text-purple-300 text-sm">Subtotal</div>
-                          <div className="text-white font-bold text-lg">{formatCurrency(item.line_total || 0)}</div>
+                        <div className="text-right sm:ml-4">
+                          <div className="text-purple-300 text-xs sm:text-sm">Subtotal</div>
+                          <div className="text-white font-bold text-sm sm:text-lg">{formatCurrency(item.line_total || 0)}</div>
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 text-center">
-                    <div className="text-purple-200">No hay productos registrados para esta venta</div>
+                  <div className="bg-white/5 rounded-xl p-3 sm:p-4 border border-white/10 text-center">
+                    <div className="text-purple-200 text-sm sm:text-base">No hay productos registrados para esta venta</div>
                   </div>
                 )}
               </div>
@@ -465,37 +482,37 @@ export default function ViewSalesPage() {
 
             {/* Payments Section */}
             <div>
-              <h4 className="text-white font-bold text-lg mb-4 flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <h4 className="text-white font-bold text-base sm:text-lg mb-3 sm:mb-4 flex items-center">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                Métodos de Pago
+                <span className="text-sm sm:text-base">Métodos de Pago</span>
               </h4>
               <div className="space-y-2">
                 {selectedSale.payments && Array.isArray(selectedSale.payments) && selectedSale.payments.length > 0 ? (
                   selectedSale.payments.map((payment, index) => (
-                    <div key={index} className="bg-white/5 rounded-lg p-3 flex justify-between items-center border border-white/10">
-                      <div>
-                        <div className="text-white font-medium">{payment.method || 'Método no especificado'}</div>
+                    <div key={index} className="bg-white/5 rounded-lg p-2 sm:p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center border border-white/10 gap-2">
+                      <div className="flex-1">
+                        <div className="text-white font-medium text-sm sm:text-base break-words">{payment.method || 'Método no especificado'}</div>
                         {payment.reference && (
-                          <div className="text-purple-300 text-sm">Referencia: {payment.reference}</div>
+                          <div className="text-purple-300 text-xs sm:text-sm break-words">Referencia: {payment.reference}</div>
                         )}
                       </div>
-                      <div className="text-white font-bold">{formatCurrency(payment.amount || 0)}</div>
+                      <div className="text-white font-bold text-sm sm:text-base sm:text-right">{formatCurrency(payment.amount || 0)}</div>
                     </div>
                   ))
                 ) : (
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10 text-center">
-                    <div className="text-purple-200">No hay métodos de pago registrados para esta venta</div>
+                  <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10 text-center">
+                    <div className="text-purple-200 text-sm sm:text-base">No hay métodos de pago registrados para esta venta</div>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="flex justify-end mt-6">
+            <div className="flex justify-end mt-4 sm:mt-6">
               <button
                 onClick={() => setIsDetailModalOpen(false)}
-                className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded-xl transition-colors"
+                className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors text-sm sm:text-base"
               >
                 Cerrar
               </button>
@@ -503,6 +520,9 @@ export default function ViewSalesPage() {
           </div>
         </div>
       )}
+      
+      {/* Toast Notifications */}
+      <toast.ToastComponent />
     </div>
   );
 }

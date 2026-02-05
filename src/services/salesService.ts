@@ -70,7 +70,7 @@ export const salesService = {
     }),
 
   deleteSale: (id: number) =>
-    apiFetch<{ message: string }>(`/api/sales/${id}`, {
+    apiFetch<{ message: string; sale_id: number; deleted_items?: number; deleted_payments?: number }>(`/api/sales/${id}`, {
       method: 'DELETE',
     }),
 
