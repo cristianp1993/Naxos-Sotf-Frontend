@@ -18,8 +18,13 @@ export default function ViewSalesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   
-  // Date filter states - set to current date by default
-  const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+  // Date filter states - set to current date by default (Colombia timezone)
+  const today = new Date().toLocaleDateString('en-CA', { 
+    timeZone: 'America/Bogota',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }); // Format: YYYY-MM-DD in Colombia timezone
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   
@@ -135,8 +140,14 @@ export default function ViewSalesPage() {
     if (!filterStartDate && !filterEndDate) return sales;
     
     const filtered = sales.filter(sale => {
+      // Use Colombia local date instead of UTC
       const saleDate = new Date(sale.opened_at);
-      const saleDateOnly = saleDate.toISOString().split('T')[0]; // Simple YYYY-MM-DD format
+      const saleDateOnly = saleDate.toLocaleDateString('en-CA', { 
+        timeZone: 'America/Bogota',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }); // Format: YYYY-MM-DD in Colombia timezone
       
       let matches = true;
       
@@ -151,7 +162,8 @@ export default function ViewSalesPage() {
       console.log('🔍 Venta:', {
         id: sale.sale_id,
         opened_at: sale.opened_at,
-        saleDateOnly: saleDateOnly,
+        saleDateUTC: saleDate.toISOString().split('T')[0],
+        saleDateColombia: saleDateOnly,
         filterStartDate,
         filterEndDate,
         matches
