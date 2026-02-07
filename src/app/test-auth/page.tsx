@@ -25,12 +25,16 @@ export default function TestAuthPage() {
         password: '123456'
       });
       
-      setTestResult('✅ Login exitoso');
-      setToken(result.token);
-      setUser(result.user);
-      
-      console.log('Token guardado:', result.token);
-      console.log('Usuario guardado:', result.user);
+      if (result) {
+        setTestResult('✅ Login exitoso');
+        setToken(result.token);
+        setUser(result.user);
+        
+        console.log('Token guardado:', result.token);
+        console.log('Usuario guardado:', result.user);
+      } else {
+        setTestResult('❌ Login fallido - credenciales incorrectas');
+      }
     } catch (error) {
       setTestResult(`❌ Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
       console.error('Error en login:', error);
