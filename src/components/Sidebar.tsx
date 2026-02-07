@@ -200,7 +200,7 @@ const menuItems: MenuItem[] = [
     label: '🍹 Carta/Menú',
     icon: ProductIcon,
     path: '/carta',
-    roles: ['ADMIN', 'MANAGER', 'CASHIER', 'VIEWER'],
+    roles: ['ADMIN', 'CASHIER'],
     description: 'Ver carta de productos'
   },
   {
@@ -252,7 +252,7 @@ const salesSubItems: MenuItem[] = [
     label: 'Realizar Venta',
     icon: SalesIcon,
     path: '/admin/sales',
-    roles: ['ADMIN', 'MANAGER', 'CASHIER'],
+    roles: ['ADMIN', 'CASHIER'],
     description: 'Crear nueva venta'
   },
   {
@@ -382,17 +382,12 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         <div className={`border-b border-white/10 ${collapsed ? 'p-4' : 'p-6'}`}>
           <div className="flex items-center justify-between">
             <div className={`flex items-center ${collapsed ? 'justify-center' : 'space-x-3'}`}>
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path
-                    d="M8 21h8M12 17v4M7 3h10l1 5H6l1-5z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                </svg>
+              <div className="w-10 h-10 rounded-xl overflow-hidden border-2 border-white/20 shadow-lg">
+                <img 
+                  src="/logo-naxos.jpg" 
+                  alt="NAXOS Logo" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               {!collapsed && (
                 <div>

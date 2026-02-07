@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useFormValidation } from '@/hooks/useFormValidation';
+import { AuthService } from '@/services/authService';
 
 // Iconos SVG simples
 const EyeIcon = ({ className }: { className?: string }) => (
@@ -107,10 +108,14 @@ export default function LoginPage() {
 
     try {
       await login(username, password);
-      // Redirigir al admin después del login exitoso
-      router.push('/admin');
-    } catch (err) {
-      setAuthError(err instanceof Error ? err.message : 'Error de autenticación');
+      // Redirigir según el rol del usuario
+      const userData = AuthService.getUser();
+      if (userData?.role === 'CASHIER') {
+        router.push('/admin/sales');
+      } else {
+        router.push('/admin');
+      }
+    } finally {
       setIsLoading(false);
     }
   };
@@ -146,17 +151,45 @@ export default function LoginPage() {
         <WineIcon className="absolute top-40 right-32 w-6 h-6 text-yellow-400 opacity-40 animate-float animation-delay-1000" />
         <CoffeeIcon className="absolute bottom-32 left-16 w-7 h-7 text-pink-400 opacity-35 animate-float animation-delay-2000" />
         <CocktailIcon className="absolute top-60 right-20 w-5 h-5 text-blue-400 opacity-30 animate-float animation-delay-3000" />
+        
+        {/* Nuevos elementos flotantes */}
+        <CocktailIcon className="absolute top-32 left-40 w-4 h-4 text-green-400 opacity-25 animate-float animation-delay-4000" />
+        <WineIcon className="absolute top-80 left-60 w-5 h-5 text-orange-400 opacity-30 animate-float animation-delay-5000" />
+        <CoffeeIcon className="absolute bottom-60 right-40 w-6 h-6 text-cyan-400 opacity-35 animate-float animation-delay-6000" />
+        <CocktailIcon className="absolute top-16 right-60 w-4 h-4 text-pink-400 opacity-25 animate-float animation-delay-7000" />
+        <WineIcon className="absolute bottom-20 left-80 w-5 h-5 text-purple-400 opacity-30 animate-float animation-delay-8000" />
+        <CoffeeIcon className="absolute top-48 right-16 w-4 h-4 text-yellow-400 opacity-25 animate-float animation-delay-9000" />
+        <CocktailIcon className="absolute bottom-40 right-80 w-6 h-6 text-blue-400 opacity-35 animate-float animation-delay-10000" />
+        <WineIcon className="absolute top-72 left-24 w-4 h-4 text-red-400 opacity-25 animate-float animation-delay-11000" />
+        <CoffeeIcon className="absolute bottom-80 left-48 w-5 h-5 text-indigo-400 opacity-30 animate-float animation-delay-12000" />
+        
+        {/* 10 elementos adicionales */}
+        <CocktailIcon className="absolute top-12 left-72 w-3 h-3 text-teal-400 opacity-20 animate-float animation-delay-13000" />
+        <WineIcon className="absolute top-56 right-48 w-4 h-4 text-rose-400 opacity-25 animate-float animation-delay-14000" />
+        <CoffeeIcon className="absolute bottom-16 left-32 w-5 h-5 text-amber-400 opacity-30 animate-float animation-delay-15000" />
+        <CocktailIcon className="absolute top-88 right-24 w-3 h-3 text-lime-400 opacity-20 animate-float animation-delay-16000" />
+        <WineIcon className="absolute bottom-48 right-64 w-4 h-4 text-violet-400 opacity-25 animate-float animation-delay-17000" />
+        <CoffeeIcon className="absolute top-24 left-88 w-3 h-3 text-sky-400 opacity-20 animate-float animation-delay-18000" />
+        <CocktailIcon className="absolute bottom-72 left-12 w-4 h-4 text-emerald-400 opacity-25 animate-float animation-delay-19000" />
+        <WineIcon className="absolute top-36 right-72 w-3 h-3 text-fuchsia-400 opacity-20 animate-float animation-delay-20000" />
+        <CoffeeIcon className="absolute bottom-24 right-48 w-5 h-5 text-slate-400 opacity-30 animate-float animation-delay-21000" />
+        <CocktailIcon className="absolute top-64 left-56 w-4 h-4 text-zinc-400 opacity-25 animate-float animation-delay-22000" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-4">
         {/* Logo/Brand Section */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="flex items-center justify-center mb-4">
-            <div className="relative">
-              <CocktailIcon className="w-16 h-16 text-purple-400 animate-pulse" />
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-yellow-400 to-pink-500 rounded-full animate-ping"></div>
+          {/* Logo NAXOS */}
+          <div className="flex items-center justify-center mb-6">
+            <div className="w-16 h-16 rounded-2xl overflow-hidden border-3 border-white/30 shadow-2xl bg-white/10 backdrop-blur-sm">
+              <img 
+                src="/logo-naxos.jpg" 
+                alt="NAXOS Logo" 
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
+          
           <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-yellow-500 bg-clip-text text-transparent mb-2">
             NAXOS
           </h1>

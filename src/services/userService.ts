@@ -7,7 +7,7 @@ export interface User {
   email: string;
   name: string;
   password_hash?: string;
-  role: 'ADMIN' | 'MANAGER';
+  role: 'ADMIN' | 'CASHIER';
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -18,14 +18,14 @@ export interface CreateUserRequest {
   email: string;
   name: string;
   password: string;
-  role: 'ADMIN' | 'MANAGER';
+  role: 'ADMIN' | 'CASHIER';
 }
 
 export interface UpdateUserRequest {
   username?: string;
   email?: string;
   name?: string;
-  role?: 'ADMIN' | 'MANAGER';
+  role?: 'ADMIN' | 'CASHIER';
   is_active?: boolean;
 }
 
@@ -40,6 +40,9 @@ class UserService {
       throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
     }
 
+    console.log('Making request to:', `${API_URL}${endpoint}`);
+    console.log('Request options:', options);
+
     const response = await fetch(`${API_URL}${endpoint}`, {
       headers: {
         'Content-Type': 'application/json',
@@ -48,6 +51,9 @@ class UserService {
       },
       ...options,
     });
+
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
 
     // Manejar tokens inválidos o expirados
     if (response.status === 401 || response.status === 403) {
@@ -69,10 +75,13 @@ class UserService {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
+      console.error('Error response:', error);
       throw new Error(error.message || `HTTP error! status: ${response.status}`);
     }
 
-    return response.json();
+    const result = await response.json();
+    console.log('Success response:', result);
+    return result;
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -86,13 +95,16 @@ class UserService {
 
   async createUser(userData: CreateUserRequest): Promise<User> {
     try {
+      console.log('Creating user with data:', userData);
       const response = await this.request('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify(userData),
       });
+      console.log('User creation response:', response);
       this.showSuccessToast('Usuario creado exitosamente');
       return response.user;
     } catch (error: any) {
+      console.error('Error creating user:', error);
       // Manejar errores de validación sin hacer throw
       if (error.message?.includes('email') && error.message?.includes('valid email')) {
         const friendlyMessage = 'El email debe tener un formato válido (ej: correo@ejemplo.com)';

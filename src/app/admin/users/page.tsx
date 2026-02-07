@@ -24,6 +24,15 @@ export default function UsersPage() {
     role: 'ADMIN'
   });
 
+  // Edit form states
+  const [editFormData, setEditFormData] = useState<UpdateUserRequest>({
+    username: '',
+    email: '',
+    name: '',
+    role: 'ADMIN',
+    is_active: true
+  });
+
   useEffect(() => {
     // Limpiar tokens inválidos al cargar la página
     AuthService.clearInvalidTokens();
@@ -73,7 +82,7 @@ export default function UsersPage() {
       }
       
       const newUser = await userService.createUser(formData);
-      setUsers([...users, newUser]);
+      setUsers(prevUsers => [...prevUsers, newUser]);
       setFormData({ username: '', email: '', name: '', password: '', role: 'ADMIN' });
       setIsCreateModalOpen(false); // Cerrar modal después de crear exitosamente
     } catch (err: any) {
@@ -94,20 +103,21 @@ export default function UsersPage() {
         throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
       }
       
-      const updateData: UpdateUserRequest = {
-        username: selectedUser.username,
-        email: selectedUser.email,
-        name: selectedUser.name,
-        role: selectedUser.role,
-        is_active: selectedUser.is_active
-      };
-      
-      const updatedUser = await userService.updateUser(selectedUser.user_id, updateData);
-      setUsers(users.map(user => 
-        user.user_id === selectedUser.user_id ? updatedUser : user
-      ));
+      const updatedUser = await userService.updateUser(selectedUser.user_id, editFormData);
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.user_id === selectedUser.user_id ? updatedUser : user
+        )
+      );
       setIsEditModalOpen(false);
       setSelectedUser(null);
+      setEditFormData({
+        username: '',
+        email: '',
+        name: '',
+        role: 'ADMIN',
+        is_active: true
+      });
     } catch (err: any) {
       if (err.message?.includes('sesión') || err.message?.includes('expirado')) {
         setError(err.message);
@@ -142,6 +152,13 @@ export default function UsersPage() {
 
   const handleEdit = (user: User) => {
     setSelectedUser(user);
+    setEditFormData({
+      username: user.username,
+      email: user.email,
+      name: user.name || '',
+      role: user.role,
+      is_active: user.is_active
+    });
     setIsEditModalOpen(true);
   };
 
@@ -161,11 +178,15 @@ export default function UsersPage() {
         throw new Error('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
       }
       
+      console.log('Toggling user status:', { userId, isActive });
       // El backend no tiene endpoint específico para toggle, usamos update
       const updatedUser = await userService.updateUser(userId, { is_active: isActive });
-      setUsers(users.map(user => 
-        user.user_id === userId ? updatedUser : user
-      ));
+      console.log('User updated in backend:', updatedUser);
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.user_id === userId ? updatedUser : user
+        )
+      );
     } catch (err: any) {
       if (err.message?.includes('sesión') || err.message?.includes('expirado')) {
         setError(err.message);
@@ -261,8 +282,8 @@ export default function UsersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
-                  {users.map((user) => (
-                    <tr key={user.user_id} className="hover:bg-white/5 transition-colors">
+                  {users.map((user, index) => (
+                    <tr key={`${user.user_id}-${index}`} className="hover:bg-white/5 transition-colors">
                       <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap w-[120px]">
                         <div className="text-white font-medium text-sm md:text-base truncate" title={user.username}>
                           {user.username}
@@ -282,9 +303,9 @@ export default function UsersPage() {
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           user.role === 'ADMIN' 
                             ? 'bg-purple-500/20 text-purple-400 border border-purple-400/30'
-                            : 'bg-blue-500/20 text-blue-400 border border-blue-400/30'
+                            : 'bg-green-500/20 text-green-400 border border-green-400/30'
                         }`}>
-                          {user.role === 'ADMIN' ? 'Admin' : 'Manager'}
+                          {user.role === 'ADMIN' ? 'Admin' : 'Operario'}
                         </span>
                       </td>
                       <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap w-[100px]">
@@ -395,11 +416,11 @@ export default function UsersPage() {
                 <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Rol</label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value as 'ADMIN' | 'MANAGER'})}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+                  onChange={(e) => setFormData({...formData, role: e.target.value as 'ADMIN' | 'CASHIER'})}
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-slate-800 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
-                  <option value="ADMIN">Administrador</option>
-                  <option value="MANAGER">Manager</option>
+                  <option value="ADMIN" className="bg-slate-800 text-white">Administrador</option>
+                  <option value="CASHIER" className="bg-slate-800 text-white">Operario</option>
                 </select>
               </div>
             </div>
@@ -434,8 +455,8 @@ export default function UsersPage() {
                 <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Documento</label>
                 <input
                   type="text"
-                  value={selectedUser.username}
-                  onChange={(e) => setSelectedUser({...selectedUser, username: e.target.value})}
+                  value={editFormData.username}
+                  onChange={(e) => setEditFormData({...editFormData, username: e.target.value})}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
@@ -443,8 +464,8 @@ export default function UsersPage() {
                 <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Nombre Completo</label>
                 <input
                   type="text"
-                  value={selectedUser.name || ''}
-                  onChange={(e) => setSelectedUser({...selectedUser, name: e.target.value})}
+                  value={editFormData.name || ''}
+                  onChange={(e) => setEditFormData({...editFormData, name: e.target.value})}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
@@ -452,31 +473,31 @@ export default function UsersPage() {
                 <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Email</label>
                 <input
                   type="email"
-                  value={selectedUser.email}
-                  onChange={(e) => setSelectedUser({...selectedUser, email: e.target.value})}
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
               <div>
                 <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Rol</label>
                 <select
-                  value={selectedUser.role}
-                  onChange={(e) => setSelectedUser({...selectedUser, role: e.target.value as 'ADMIN' | 'MANAGER'})}
+                  value={editFormData.role}
+                  onChange={(e) => setEditFormData({...editFormData, role: e.target.value as 'ADMIN' | 'CASHIER'})}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
-                  <option value="ADMIN">Administrador</option>
-                  <option value="MANAGER">Manager</option>
+                  <option value="ADMIN" className="bg-slate-800 text-white">Administrador</option>
+                  <option value="CASHIER" className="bg-slate-800 text-white">Operario</option>
                 </select>
               </div>
               <div>
                 <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Estado</label>
                 <select
-                  value={selectedUser.is_active ? 'true' : 'false'}
-                  onChange={(e) => setSelectedUser({...selectedUser, is_active: e.target.value === 'true'})}
+                  value={editFormData.is_active ? 'true' : 'false'}
+                  onChange={(e) => setEditFormData({...editFormData, is_active: e.target.value === 'true'})}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
-                  <option value="true">Activo</option>
-                  <option value="false">Inactivo</option>
+                  <option value="true" className="bg-slate-800 text-white">Activo</option>
+                  <option value="false" className="bg-slate-800 text-white">Inactivo</option>
                 </select>
               </div>
             </div>
@@ -491,6 +512,13 @@ export default function UsersPage() {
                 onClick={() => {
                   setIsEditModalOpen(false);
                   setSelectedUser(null);
+                  setEditFormData({
+                    username: '',
+                    email: '',
+                    name: '',
+                    role: 'ADMIN',
+                    is_active: true
+                  });
                 }}
                 className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 px-4 rounded-xl transition-colors"
               >
@@ -535,9 +563,9 @@ export default function UsersPage() {
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                   selectedUser.role === 'ADMIN' 
                     ? 'bg-purple-500/20 text-purple-400 border border-purple-400/30'
-                    : 'bg-blue-500/20 text-blue-400 border border-blue-400/30'
+                    : 'bg-green-500/20 text-green-400 border border-green-400/30'
                 }`}>
-                  {selectedUser.role === 'ADMIN' ? 'Administrador' : 'Manager'}
+                  {selectedUser.role === 'ADMIN' ? 'Administrador' : 'Operario'}
                 </span>
               </div>
               <div>

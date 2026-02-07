@@ -78,7 +78,7 @@ export class AuthService {
     }
   }
 
-  static async login(credentials: LoginCredentials): Promise<AuthResponse> {
+  static async login(credentials: LoginCredentials): Promise<AuthResponse | null> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
@@ -90,14 +90,16 @@ export class AuthService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Error en el login');
+        this.showErrorToast(errorData.message || 'Error en el login');
+        return null;
       }
 
       const data: AuthResponse = await response.json();
       
       // Validar token antes de guardarlo
       if (this.isTokenExpired(data.token)) {
-        throw new Error('El token recibido ya está expirado');
+        this.showErrorToast('El token recibido ya está expirado');
+        return null;
       }
       
       // Guardar token y usuario en localStorage
@@ -107,7 +109,8 @@ export class AuthService {
       return data;
     } catch (error) {
       console.error('Error en login:', error);
-      throw error;
+      this.showErrorToast('Error de conexión al servidor');
+      return null;
     }
   }
 
@@ -193,6 +196,39 @@ export class AuthService {
       return Math.max(0, payload.exp - Math.floor(Date.now() / 1000));
     } catch {
       return 0;
+    }
+  }
+
+  // Método para mostrar toast de error
+  private static showErrorToast(message: string): void {
+    if (typeof window !== 'undefined') {
+      // Eliminar toast existente si hay uno
+      const existingToast = document.getElementById('auth-error-toast');
+      if (existingToast) {
+        existingToast.remove();
+      }
+
+      // Crear nuevo toast
+      const toast = document.createElement('div');
+      toast.id = 'auth-error-toast';
+      toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 max-w-sm animate-pulse';
+      toast.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span class="text-sm font-medium">${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Auto-eliminar después de 4 segundos
+      setTimeout(() => {
+        if (toast && toast.parentNode) {
+          toast.remove();
+        }
+      }, 4000);
     }
   }
 }

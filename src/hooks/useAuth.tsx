@@ -33,12 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    try {
-      const response = await AuthService.login({ username, password });
+    const response = await AuthService.login({ username, password });
+    if (response) {
       setUser(response.user);
-    } catch (error) {
-      throw error;
     }
+    // No hacemos throw, el error se maneja con toast en AuthService
   };
 
   const logout = () => {
