@@ -284,7 +284,7 @@ export default function UsersPage() {
                             ? 'bg-purple-500/20 text-purple-400 border border-purple-400/30'
                             : 'bg-blue-500/20 text-blue-400 border border-blue-400/30'
                         }`}>
-                          {user.role === 'ADMIN' ? 'Admin' : 'Oper'}
+                          {user.role === 'ADMIN' ? 'Admin' : 'Manager'}
                         </span>
                       </td>
                       <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap w-[100px]">
@@ -395,11 +395,11 @@ export default function UsersPage() {
                 <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Rol</label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value as 'ADMIN' | 'OPERARIO'})}
+                  onChange={(e) => setFormData({...formData, role: e.target.value as 'ADMIN' | 'MANAGER'})}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="ADMIN">Administrador</option>
-                  <option value="OPERARIO">Operario</option>
+                  <option value="MANAGER">Manager</option>
                 </select>
               </div>
             </div>
@@ -461,11 +461,11 @@ export default function UsersPage() {
                 <label className="block text-purple-200 text-sm font-medium mb-1 sm:mb-2">Rol</label>
                 <select
                   value={selectedUser.role}
-                  onChange={(e) => setSelectedUser({...selectedUser, role: e.target.value as 'ADMIN' | 'OPERARIO'})}
+                  onChange={(e) => setSelectedUser({...selectedUser, role: e.target.value as 'ADMIN' | 'MANAGER'})}
                   className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                 >
                   <option value="ADMIN">Administrador</option>
-                  <option value="OPERARIO">Operario</option>
+                  <option value="MANAGER">Manager</option>
                 </select>
               </div>
               <div>
@@ -537,7 +537,7 @@ export default function UsersPage() {
                     ? 'bg-purple-500/20 text-purple-400 border border-purple-400/30'
                     : 'bg-blue-500/20 text-blue-400 border border-blue-400/30'
                 }`}>
-                  {selectedUser.role === 'ADMIN' ? 'Administrador' : 'Operario'}
+                  {selectedUser.role === 'ADMIN' ? 'Administrador' : 'Manager'}
                 </span>
               </div>
               <div>

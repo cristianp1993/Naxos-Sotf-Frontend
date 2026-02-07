@@ -7,7 +7,7 @@ export interface User {
   email: string;
   name: string;
   password_hash?: string;
-  role: 'ADMIN' | 'OPERARIO';
+  role: 'ADMIN' | 'MANAGER';
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -18,14 +18,14 @@ export interface CreateUserRequest {
   email: string;
   name: string;
   password: string;
-  role: 'ADMIN' | 'OPERARIO';
+  role: 'ADMIN' | 'MANAGER';
 }
 
 export interface UpdateUserRequest {
   username?: string;
   email?: string;
   name?: string;
-  role?: 'ADMIN' | 'OPERARIO';
+  role?: 'ADMIN' | 'MANAGER';
   is_active?: boolean;
 }
 

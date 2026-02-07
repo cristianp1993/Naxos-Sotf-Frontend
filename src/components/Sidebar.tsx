@@ -156,6 +156,17 @@ const LogoutIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const ExpenseIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"
+    />
+  </svg>
+);
+
 const ChevronLeftIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -209,6 +220,14 @@ const menuItems: MenuItem[] = [
     description: 'Control de stock'
   },
   {
+    id: 'expenses',
+    label: '💰 Gastos',
+    icon: ExpenseIcon,
+    path: '/admin/expenses',
+    roles: ['ADMIN'],
+    description: 'Gestión de gastos'
+  },
+  {
     id: 'reports',
     label: '📈 Reportes',
     icon: ReportsIcon,
@@ -241,7 +260,7 @@ const salesSubItems: MenuItem[] = [
     label: 'Ver Ventas',
     icon: ViewSalesIcon,
     path: '/admin/sales/view',
-    roles: ['ADMIN', 'MANAGER'],
+    roles: ['ADMIN'],
     description: 'Ver ventas guardadas'
   }
 ];
@@ -555,7 +574,24 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             );
           })}
 
-          {/* 📈 Reportes */}
+          {/* � Gastos */}
+          {filteredMenuItems.filter(item => item.id === 'expenses').map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleNavigation(item.path)}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl mb-2 transition-all duration-200 ${isActive(item.path)
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-purple-200 hover:bg-white/10 hover:text-white'
+                  }`}
+              >
+                {!collapsed && <span className="font-medium">{item.label}</span>}
+              </button>
+            );
+          })}
+
+          {/* �� Reportes */}
           {filteredMenuItems.filter(item => item.id === 'reports').map((item) => {
             const Icon = item.icon;
             return (

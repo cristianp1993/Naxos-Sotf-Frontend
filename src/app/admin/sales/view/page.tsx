@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { salesService, type Sale } from '@/services/salesService';
 import { useToast } from '@/components/ui/toast';
+import { salesService, type Sale, type PaymentMethodUI } from '@/services/salesService';
 
 export default function ViewSalesPage() {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -118,6 +118,28 @@ export default function ViewSalesPage() {
   };
 
   const handleEdit = (sale: Sale) => {
+    console.log('🔍 handleEdit sale data:', JSON.stringify(sale, null, 2));
+    console.log('🔍 sale.total:', sale.total, typeof sale.total);
+    console.log('🔍 sale.items:', sale.items);
+    if (sale.items && sale.items.length > 0) {
+      const firstItem = sale.items[0];
+      console.log('🔍 first item:', firstItem);
+      console.log('🔍 first item keys:', Object.keys(firstItem));
+      console.log('🔍 first item complete:', JSON.stringify(firstItem, null, 2));
+      console.log('🔍 first item.unit_price:', firstItem.unit_price, typeof firstItem.unit_price);
+      console.log('🔍 first item.line_total:', firstItem.line_total, typeof firstItem.line_total);
+      // Buscar variant_id en diferentes propiedades posibles
+      console.log('🔍 looking for variant_id:');
+      console.log('  - item.variant_id:', (firstItem as any).variant_id);
+      console.log('  - item.item_id:', (firstItem as any).item_id);
+      console.log('  - item.id:', (firstItem as any).id);
+      console.log('  - item.sale_item_id:', (firstItem as any).sale_item_id);
+    }
+    console.log('🔍 sale.payments:', sale.payments);
+    if (sale.payments && sale.payments.length > 0) {
+      console.log('🔍 first payment:', sale.payments[0]);
+      console.log('🔍 first payment.amount:', sale.payments[0].amount, typeof sale.payments[0].amount);
+    }
     setSelectedSale(sale);
     setIsEditModalOpen(true);
   };
@@ -243,11 +265,14 @@ export default function ViewSalesPage() {
   }, [itemsPerPage]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-CO', {
+    console.log('🔍 formatCurrency input:', { amount, type: typeof amount });
+    const formatted = new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0
     }).format(amount);
+    console.log('🔍 formatCurrency output:', formatted);
+    return formatted;
   };
 
   const formatDate = (dateString: string) => {
@@ -625,29 +650,29 @@ export default function ViewSalesPage() {
       {/* Edit Modal */}
       {isEditModalOpen && selectedSale && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-4xl w-full border border-white/20 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-white">Editar Venta #{selectedSale.sale_id}</h3>
+          <div className="bg-slate-800 rounded-2xl p-4 sm:p-6 max-w-4xl w-full border border-white/20 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-bold text-white">Editar Venta #{selectedSale.sale_id}</h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
                 className="text-purple-300 hover:text-white transition-colors"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             {/* Sale Details */}
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-purple-200 text-sm font-medium mb-2">Fecha</label>
-                  <div className="text-white">{formatDate(selectedSale.opened_at)}</div>
+                  <div className="text-white text-sm sm:text-base">{formatDate(selectedSale.opened_at)}</div>
                 </div>
                 <div>
                   <label className="block text-purple-200 text-sm font-medium mb-2">Total</label>
-                  <div className="text-white font-bold">{formatCurrency(selectedSale.total)}</div>
+                  <div className="text-white font-bold text-sm sm:text-base">{formatCurrency(selectedSale.total)}</div>
                 </div>
               </div>
 
@@ -656,34 +681,84 @@ export default function ViewSalesPage() {
                 <textarea
                   value={selectedSale.observation || ''}
                   onChange={(e) => setSelectedSale({...selectedSale, observation: e.target.value})}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 sm:px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
                   rows={3}
                   placeholder="Agregar observación..."
                 />
               </div>
 
-              {/* Items */}
+              {/* Editable Items */}
               <div>
-                <h4 className="text-white font-medium mb-3">Productos</h4>
+                <h4 className="text-white font-medium mb-3 text-sm sm:text-base">Productos</h4>
                 <div className="space-y-2">
-                  {selectedSale.items.map((item, index) => (
-                    <div key={index} className="bg-white/5 rounded-xl p-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="text-white font-medium">
+                  {selectedSale.items && selectedSale.items.map((item, index) => (
+                    <div key={index} className="bg-white/5 rounded-xl p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                        <div className="flex-1">
+                          <div className="text-white font-medium text-sm sm:text-base mb-2">
                             {item.product_name} - {item.variant_name}
                           </div>
                           {item.flavor_name && (
-                            <div className="text-purple-300 text-sm">
+                            <div className="text-purple-300 text-sm mb-2">
                               Sabor: {item.flavor_name}
                             </div>
                           )}
-                          <div className="text-purple-200 text-sm">
-                            {item.quantity} × {formatCurrency(item.unit_price)}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                            <div>
+                              <label className="block text-purple-300 text-xs mb-1">Cantidad</label>
+                              <input
+                                type="number"
+                                value={Math.round(item.quantity)}
+                                onChange={(e) => {
+                                  const newQuantity = parseInt(e.target.value) || 0;
+                                  const newItems = [...selectedSale.items];
+                                  newItems[index] = {
+                                    ...item,
+                                    quantity: newQuantity,
+                                    line_total: newQuantity * item.unit_price
+                                  };
+                                  setSelectedSale({
+                                    ...selectedSale,
+                                    items: newItems,
+                                    total: newItems.reduce((sum, i) => sum + i.line_total, 0)
+                                  });
+                                }}
+                                className="w-full px-2 py-1 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                min="1"
+                                step="1"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-purple-300 text-xs mb-1">Precio Unitario</label>
+                              <input
+                                type="number"
+                                value={item.unit_price}
+                                onChange={(e) => {
+                                  const newPrice = parseFloat(e.target.value) || 0;
+                                  const newItems = [...selectedSale.items];
+                                  newItems[index] = {
+                                    ...item,
+                                    unit_price: newPrice,
+                                    line_total: item.quantity * newPrice
+                                  };
+                                  setSelectedSale({
+                                    ...selectedSale,
+                                    items: newItems,
+                                    total: newItems.reduce((sum, i) => sum + i.line_total, 0)
+                                  });
+                                }}
+                                className="w-full px-2 py-1 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                min="0"
+                                step="0.01"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-purple-300 text-xs mb-1">Subtotal</label>
+                              <div className="text-white font-medium text-sm">
+                                {formatCurrency(item.line_total)}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-white font-medium">
-                          {formatCurrency(item.line_total)}
                         </div>
                       </div>
                     </div>
@@ -691,35 +766,155 @@ export default function ViewSalesPage() {
                 </div>
               </div>
 
-              {/* Payments */}
+              {/* Editable Payments */}
               <div>
-                <h4 className="text-white font-medium mb-3">Métodos de pago</h4>
+                <h4 className="text-white font-medium mb-3 text-sm sm:text-base">Métodos de pago</h4>
                 <div className="space-y-2">
-                  {selectedSale.payments.map((payment, index) => (
-                    <div key={index} className="flex justify-between items-center bg-white/5 rounded-lg px-3 py-2">
-                      <span className="text-purple-200">
-                        {payment.method}
-                        {payment.reference && ` (${payment.reference})`}
-                      </span>
-                      <span className="text-white font-medium">
-                        {formatCurrency(payment.amount)}
-                      </span>
+                  {selectedSale.payments && selectedSale.payments.map((payment, index) => (
+                    <div key={index} className="bg-white/5 rounded-lg p-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                        <div>
+                          <label className="block text-purple-300 text-xs mb-1">Método</label>
+                          <select
+                            value={payment.method}
+                            onChange={(e) => {
+                              const newPayments = [...selectedSale.payments];
+                              newPayments[index] = {
+                                ...payment,
+                                method: e.target.value
+                              };
+                              setSelectedSale({
+                                ...selectedSale,
+                                payments: newPayments
+                              });
+                            }}
+                            className="w-full px-2 py-1 bg-slate-700/80 hover:bg-slate-600/80 border border-slate-500/50 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+                          >
+                            <option value="EFECTIVO" className="bg-slate-700 text-white hover:bg-slate-600">EFECTIVO</option>
+                            <option value="TARJETA" className="bg-slate-700 text-white hover:bg-slate-600">TARJETA</option>
+                            <option value="TRANSFERENCIA" className="bg-slate-700 text-white hover:bg-slate-600">TRANSFERENCIA</option>
+                            <option value="OTRO" className="bg-slate-700 text-white hover:bg-slate-600">OTRO</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-purple-300 text-xs mb-1">Monto</label>
+                          <input
+                            type="number"
+                            value={payment.amount}
+                            onChange={(e) => {
+                              const newAmount = parseFloat(e.target.value) || 0;
+                              const newPayments = [...selectedSale.payments];
+                              newPayments[index] = {
+                                ...payment,
+                                amount: newAmount
+                              };
+                              setSelectedSale({
+                                ...selectedSale,
+                                payments: newPayments
+                              });
+                            }}
+                            className="w-full px-2 py-1 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            min="0"
+                            step="0.01"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-purple-300 text-xs mb-1">Referencia</label>
+                          <input
+                            type="text"
+                            value={payment.reference || ''}
+                            onChange={(e) => {
+                              const newPayments = [...selectedSale.payments];
+                              newPayments[index] = {
+                                ...payment,
+                                reference: e.target.value
+                              };
+                              setSelectedSale({
+                                ...selectedSale,
+                                payments: newPayments
+                              });
+                            }}
+                            className="w-full px-2 py-1 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="Referencia (opcional)"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="flex space-x-3 mt-6">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
               <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-xl transition-colors"
+                onClick={async () => {
+                  try {
+                    console.log('🔍 Guardando cambios en backend:', selectedSale);
+                    
+                    // Preparar el payload para el backend - items y pagos
+                    const updatePayload = {
+                      observation: selectedSale.observation,
+                      items: selectedSale.items.map(item => {
+                        // Buscar variant_id en diferentes propiedades posibles
+                        const itemAny = item as any;
+                        const variantId = itemAny.variant_id || itemAny.item_id || itemAny.id || itemAny.sale_item_id;
+                        
+                        console.log('🔍 Processing item:', {
+                          itemName: item.product_name,
+                          variantId,
+                          availableKeys: Object.keys(itemAny)
+                        });
+                        
+                        if (!variantId || variantId === 0) {
+                          console.warn('⚠️ No variant_id found for item:', item.product_name);
+                          // Para items sin variant_id, usamos un placeholder o lanzamos error
+                          throw new Error(`No se encontró variant_id para el item: ${item.product_name}`);
+                        }
+                        
+                        return {
+                          variant_id: variantId,
+                          flavor_name: item.flavor_name || null,
+                          quantity: item.quantity,
+                          unit_price: item.unit_price
+                        };
+                      }),
+                      payments: selectedSale.payments.map(payment => ({
+                        method: payment.method as PaymentMethodUI,
+                        amount: payment.amount,
+                        reference: payment.reference || null
+                      }))
+                    };
+                    
+                    console.log('🔍 Payload para backend:', updatePayload);
+                    
+                    // Validar que haya items y pagos
+                    if (updatePayload.items.length === 0) {
+                      throw new Error('Se requiere al menos un item');
+                    }
+                    
+                    if (updatePayload.payments.length === 0) {
+                      throw new Error('Se requiere al menos un método de pago');
+                    }
+                    
+                    // Llamar al backend para actualizar
+                    const response = await salesService.updateSale(selectedSale.sale_id, updatePayload);
+                    console.log('🔍 Respuesta del backend:', response);
+                    
+                    toast.success('Cambios guardados correctamente');
+                    setIsEditModalOpen(false);
+                    loadSales(); // Recargar las ventas para ver los cambios
+                  } catch (err: any) {
+                    console.error('Error al guardar cambios:', err);
+                    toast.error(err.message || 'Error al guardar los cambios');
+                  }
+                }}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 sm:py-3 px-4 rounded-xl transition-colors text-sm sm:text-base"
               >
                 Guardar Cambios
               </button>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 px-4 rounded-xl transition-colors"
+                className="flex-1 bg-white/10 hover:bg-white/20 text-white font-medium py-2 sm:py-3 px-4 rounded-xl transition-colors text-sm sm:text-base"
               >
                 Cancelar
               </button>
