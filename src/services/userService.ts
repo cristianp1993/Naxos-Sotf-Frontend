@@ -96,13 +96,13 @@ class UserService {
   async createUser(userData: CreateUserRequest): Promise<User> {
     try {
       console.log('Creating user with data:', userData);
-      const response = await this.request('/api/auth/register', {
+      const result = await this.request('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify(userData),
       });
-      console.log('User creation response:', response);
+      console.log('User creation response:', result);
       this.showSuccessToast('Usuario creado exitosamente');
-      return response.user;
+      return result.user || result; // Extraer el user del response
     } catch (error: any) {
       console.error('Error creating user:', error);
       // Manejar errores de validación sin hacer throw
@@ -125,10 +125,11 @@ class UserService {
 
   async updateUser(userId: string, userData: UpdateUserRequest): Promise<User> {
     try {
-      return await this.request(`/api/auth/users/${userId}`, {
+      const result = await this.request(`/api/auth/users/${userId}`, {
         method: 'PUT',
         body: JSON.stringify(userData),
       });
+      return result.user || result; // Extraer el user del response o usar result directamente
     } catch (error: any) {
       // Manejar errores de validación sin hacer throw
       if (error.message?.includes('email')) {

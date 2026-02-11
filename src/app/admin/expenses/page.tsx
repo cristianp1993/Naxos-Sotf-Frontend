@@ -119,7 +119,10 @@ export default function ExpensesPage() {
 
   // Calculate total sum of filtered expenses
   const getFilteredTotal = () => {
-    return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    return filteredExpenses.reduce((sum, expense) => {
+      const amount = parseFloat(expense.amount.toString());
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
   };
 
   // Calculate totals by concept
@@ -130,7 +133,8 @@ export default function ExpensesPage() {
       if (!totals[expense.concept]) {
         totals[expense.concept] = 0;
       }
-      totals[expense.concept] += expense.amount;
+      const amount = parseFloat(expense.amount.toString());
+      totals[expense.concept] += isNaN(amount) ? 0 : amount;
     });
     
     return totals;
@@ -253,8 +257,17 @@ export default function ExpensesPage() {
     });
   };
 
-  const calculateTotal = () => {
-    return expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  // Get date range text for display
+  const getDateRangeText = () => {
+    if (filterStartDate && filterEndDate) {
+      return `${formatDate(filterStartDate)} - ${formatDate(filterEndDate)}`;
+    } else if (filterStartDate) {
+      return `Desde ${formatDate(filterStartDate)}`;
+    } else if (filterEndDate) {
+      return `Hasta ${formatDate(filterEndDate)}`;
+    } else {
+      return formatDate(new Date().toISOString().split('T')[0]);
+    }
   };
 
   // Cerrar dropdown cuando se hace clic fuera
@@ -430,15 +443,21 @@ export default function ExpensesPage() {
           <div className="p-4 sm:p-6 pt-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-4 sm:p-6 border border-white/20">
-                <div className="text-purple-300 text-sm sm:text-base mb-2">Total de Gastos {filterStartDate || filterEndDate || filterConcept ? '(Filtrados)' : '(General)'}</div>
+                <div className="text-purple-300 text-sm sm:text-base mb-2">
+                  Total de Gastos {filterStartDate || filterEndDate || filterConcept ? `(Filtrados: ${getDateRangeText()})` : `(General)`}
+                </div>
                 <div className="text-white text-2xl sm:text-3xl font-bold">{filteredExpenses.length}</div>
               </div>
               <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-4 sm:p-6 border border-white/20">
-                <div className="text-purple-300 text-sm sm:text-base mb-2">Monto Total {filterStartDate || filterEndDate || filterConcept ? '(Filtrado)' : '(General)'}</div>
+                <div className="text-purple-300 text-sm sm:text-base mb-2">
+                  Monto Total {filterStartDate || filterEndDate || filterConcept ? `(Filtrado: ${getDateRangeText()})` : `(General)`}
+                </div>
                 <div className="text-white text-2xl sm:text-3xl font-bold">{formatCurrency(filteredTotal)}</div>
               </div>
               <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-4 sm:p-6 border border-white/20">
-                <div className="text-purple-300 text-sm sm:text-base mb-2">Promedio por Gasto</div>
+                <div className="text-purple-300 text-sm sm:text-base mb-2">
+                  Promedio por Gasto {filterStartDate || filterEndDate || filterConcept ? `(Filtrado: ${getDateRangeText()})` : `(General)`}
+                </div>
                 <div className="text-white text-2xl sm:text-3xl font-bold">
                   {filteredExpenses.length > 0 ? formatCurrency(filteredTotal / filteredExpenses.length) : formatCurrency(0)}
                 </div>
@@ -484,7 +503,44 @@ export default function ExpensesPage() {
       {/* Expenses Table */}
       <div className="bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          {/* Mobile Card View */}
+          <div className="sm:hidden">
+            {paginatedExpenses.map((expense) => (
+              <div key={expense.id} className="bg-white/5 border-b border-white/10 p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="text-white font-medium text-sm">{expense.concept}</div>
+                  <div className="text-white font-bold text-sm">{formatCurrency(parseFloat(expense.amount.toString()))}</div>
+                </div>
+                <div className="text-purple-200 text-xs mb-1">{formatDate(expense.expense_date)}</div>
+                <div className="text-purple-200 text-xs mb-2 truncate" title={expense.description || ''}>
+                  {expense.description || 'N/A'}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(expense)}
+                    className="text-blue-300 hover:text-white transition-colors"
+                    title="Editar gasto"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => confirmDelete(expense.id)}
+                    className="text-red-300 hover:text-white transition-colors"
+                    title="Eliminar gasto"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Desktop Table View */}
+          <table className="w-full hidden sm:table">
             <thead className="bg-white/5">
               <tr>
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider">
@@ -493,7 +549,7 @@ export default function ExpensesPage() {
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider">
                   Concepto
                 </th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider hidden sm:table-cell">
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider">
                   Descripción
                 </th>
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-purple-200 uppercase tracking-wider">
@@ -513,13 +569,13 @@ export default function ExpensesPage() {
                   <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <div className="text-white font-medium text-sm sm:text-base">{expense.concept}</div>
                   </td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">
-                    <div className="text-purple-200 text-sm max-w-xs truncate" title={expense.description || ''}>
+                  <td className="px-4 sm:px-6 py-3 sm:py-4">
+                    <div className="text-purple-200 text-xs sm:text-sm max-w-xs truncate" title={expense.description || ''}>
                       {expense.description || 'N/A'}
                     </div>
                   </td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <div className="text-white font-bold text-sm sm:text-base">{formatCurrency(expense.amount)}</div>
+                    <div className="text-white font-bold text-sm sm:text-base">{formatCurrency(parseFloat(expense.amount.toString()))}</div>
                   </td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <div className="flex gap-2">

@@ -32,6 +32,9 @@ export default function ViewSalesPage() {
   const [filterStartDate, setFilterStartDate] = useState(today);
   const [filterEndDate, setFilterEndDate] = useState(today);
   
+  // Accordion state for filters
+  const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+  
   const toast = useToast();
 
   useEffect(() => {
@@ -310,69 +313,88 @@ export default function ViewSalesPage() {
       </div>
 
       {/* Filters and Controls */}
-      <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-4 sm:p-6 border border-white/20">
-        {/* Date Filters */}
-        <div className="mb-4 sm:mb-6">
-          <h3 className="text-white font-bold text-base sm:text-lg mb-3 sm:mb-4">Filtrar por Rango de Fechas</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <div>
-              <label className="block text-purple-300 text-xs sm:text-sm font-medium mb-1 sm:mb-2">
-                Fecha Inicio (YYYY-MM-DD)
-              </label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-purple-300 text-xs sm:text-sm font-medium mb-1 sm:mb-2">
-                Fecha Fin (YYYY-MM-DD)
-              </label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex items-end">
-              <button
-                onClick={applyFilters}
-                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors text-sm sm:text-base"
-              >
-                Aplicar Filtros
-              </button>
-            </div>
-          </div>
+      <div className="bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20">
+        <div 
+          className="flex justify-between items-center p-4 sm:p-6 cursor-pointer hover:bg-white/5 transition-colors rounded-t-3xl"
+          onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+        >
+          <h3 className="text-white font-bold text-base sm:text-lg">Filtrar Ventas</h3>
+          <svg 
+            className={`w-5 h-5 text-white transition-transform duration-200 ${isFiltersOpen ? 'rotate-180' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
+        
+        {isFiltersOpen && (
+          <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+            {/* Date Filters */}
+            <div className="mb-4 sm:mb-6">
+              <h4 className="text-purple-300 font-medium text-sm sm:text-base mb-3 sm:mb-4">Rango de Fechas</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                <div>
+                  <label className="block text-purple-300 text-xs sm:text-sm font-medium mb-1 sm:mb-2">
+                    Fecha Inicio (YYYY-MM-DD)
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-purple-300 text-xs sm:text-sm font-medium mb-1 sm:mb-2">
+                    Fecha Fin (YYYY-MM-DD)
+                  </label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={applyFilters}
+                    className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors text-sm sm:text-base"
+                  >
+                    Aplicar Filtros
+                  </button>
+                </div>
+              </div>
+            </div>
 
-        {/* Pagination Controls */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <label className="text-purple-300 text-xs sm:text-sm font-medium">
-              Items por página:
-            </label>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => setItemsPerPage(Number(e.target.value))}
-              className="px-3 py-2 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/30 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
-            >
-              <option value={10}>10</option>
-              <option value={15}>15</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
-          
-          {filteredSales.length > 0 && (
-            <div className="text-purple-200 text-xs sm:text-sm">
-              Mostrando {startIndex} a {endIndex} de {filteredSales.length} ventas
+            {/* Pagination Controls */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <label className="text-purple-300 text-xs sm:text-sm font-medium">
+                  Items por página:
+                </label>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="px-3 py-2 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-400/30 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm"
+                >
+                  <option value={10}>10</option>
+                  <option value={15}>15</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+              
+              {filteredSales.length > 0 && (
+                <div className="text-purple-200 text-xs sm:text-sm">
+                  Mostrando {startIndex} a {endIndex} de {filteredSales.length} ventas
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Sales Table */}
