@@ -619,39 +619,52 @@ export default function ExpensesPage() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalPages > 0 && (
         <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-4 sm:p-6 border border-white/20">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div className="text-purple-200 text-sm">
-              Página {currentPage} de {totalPages}
+            <div className="text-purple-200 text-xs sm:text-sm">
+              Página {currentPage} de {totalPages} ({filteredExpenses.length} gastos totales)
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1 sm:gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                className="px-2 py-1 sm:px-3 sm:py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-xs sm:text-sm"
               >
                 Anterior
               </button>
               <div className="flex gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-2 rounded-lg transition-colors ${
-                      page === currentPage 
-                        ? 'bg-purple-600 text-white' 
-                        : 'bg-purple-600/30 hover:bg-purple-600/50 text-purple-200'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-2 py-1 sm:px-3 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm ${
+                        pageNum === currentPage 
+                          ? 'bg-purple-600 text-white' 
+                          : 'bg-purple-600/30 hover:bg-purple-600/50 text-purple-200'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
               </div>
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                className="px-2 py-1 sm:px-3 sm:py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-xs sm:text-sm"
               >
                 Siguiente
               </button>
