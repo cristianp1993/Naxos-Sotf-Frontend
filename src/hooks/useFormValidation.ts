@@ -89,6 +89,16 @@ export function useFormValidation(rules: ValidationRules) {
     return !getFieldError(fieldName);
   };
 
+  const validateFieldOnChange = (name: string, value: string) => {
+    if (touched[name]) {
+      const error = validateField(name, value);
+      setErrors((prev) => ({
+        ...prev,
+        [name]: error,
+      }));
+    }
+  };
+
   return {
     errors,
     touched,
@@ -98,5 +108,6 @@ export function useFormValidation(rules: ValidationRules) {
     clearFieldError,
     getFieldError,
     isFieldValid,
+    validateFieldOnChange,
   };
 }

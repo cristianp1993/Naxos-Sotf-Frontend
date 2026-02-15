@@ -86,7 +86,8 @@ export default function LoginPage() {
     getFieldError,
     isFieldValid,
     setFieldTouched,
-    validateForm
+    validateForm,
+    validateFieldOnChange,
   } = useFormValidation(validationRules);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,7 +122,9 @@ export default function LoginPage() {
   };
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUsername(e.target.value);
+    const value = e.target.value;
+    setUsername(value);
+    validateFieldOnChange('username', value);
     if (error || authError) {
       setError('');
       setAuthError('');
@@ -129,7 +132,9 @@ export default function LoginPage() {
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
+    const value = e.target.value;
+    setPassword(value);
+    validateFieldOnChange('password', value);
     if (error || authError) {
       setError('');
       setAuthError('');

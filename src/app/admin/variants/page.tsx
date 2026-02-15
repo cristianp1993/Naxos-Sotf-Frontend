@@ -132,6 +132,9 @@ export default function VariantsPage() {
   };
 
   const openEdit = (v: Variant) => {
+    console.log('🔍 DEBUG - Variante a editar:', v);
+    console.log('🔍 DEBUG - Precio recibido:', v.price, 'Tipo:', typeof v.price);
+    
     setView('edit');
     setEditingVariantId(v.variant_id);
     setError(null);
@@ -143,9 +146,11 @@ export default function VariantsPage() {
       toppings: Number.isFinite(v.toppings) ? v.toppings : 0,
       sku: v.sku ?? null,
       image_url: v.image_url ?? null,
-      price: Number.isFinite(v.price) ? v.price : 0,
+      price: v.price !== null && v.price !== undefined ? Number(v.price) : 0,
       is_active: !!v.is_active
     });
+    
+    console.log('🔍 DEBUG - Precio asignado al formulario:', v.price !== null && v.price !== undefined ? Number(v.price) : 0);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
