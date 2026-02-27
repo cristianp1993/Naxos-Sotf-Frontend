@@ -38,13 +38,44 @@ export default function ViewSalesPage() {
   const toast = useToast();
 
   useEffect(() => {
-    loadSales();
+    // Load today's sales by default
+    loadSales(true);
   }, []);
 
-  const loadSales = async () => {
+  // Reload sales when page changes or filters change
+  useEffect(() => {
+    if (currentPage > 1) {
+      loadSales(true);
+    }
+  }, [currentPage]);
+
+  // Reload sales when filter dates change
+  useEffect(() => {
+    if (filterStartDate && filterEndDate) {
+      loadSales(true);
+    }
+  }, [filterStartDate, filterEndDate]);
+
+  const loadSales = async (useFilters: boolean = true) => {
     try {
       setLoading(true);
-      const data = await salesService.getAllSales();
+      let data;
+      
+      if (useFilters && (filterStartDate && filterEndDate)) {
+        // Use filtered API call
+        console.log('🔍 Cargando ventas con filtros:', { filterStartDate, filterEndDate });
+        data = await salesService.getSalesWithFilters({
+          start_date: filterStartDate,
+          end_date: filterEndDate,
+          page: currentPage,
+          limit: itemsPerPage
+        });
+      } else {
+        // Load all sales without filters (fallback)
+        console.log('🔍 Cargando todas las ventas');
+        data = await salesService.getAllSales();
+      }
+      
       console.log('Datos recibidos del API:', data);
       console.log('Tipo de dato:', typeof data);
       console.log('Es array?:', Array.isArray(data));
@@ -53,23 +84,42 @@ export default function ViewSalesPage() {
       // Si es un array directamente, usarlo
       // Si es un objeto con otra estructura, buscar el array
       let salesArray: Sale[] = [];
+      let totalCount = 0;
+      
       if (Array.isArray(data)) {
         salesArray = data;
+        totalCount = data.length;
       } else if (data && typeof data === 'object' && data !== null) {
         // Type assertion para poder acceder a las propiedades
         const dataObj = data as Record<string, unknown>;
         // Buscar propiedades que puedan contener el array de ventas
         if (Array.isArray(dataObj.sales)) {
           salesArray = dataObj.sales as Sale[];
+          totalCount = (dataObj.total as number) || dataObj.sales.length;
         } else if (Array.isArray(dataObj.data)) {
           salesArray = dataObj.data as Sale[];
+          totalCount = (dataObj.total as number) || dataObj.data.length;
         } else if (Array.isArray(dataObj.results)) {
           salesArray = dataObj.results as Sale[];
+          totalCount = (dataObj.total as number) || dataObj.results.length;
+        } else if (Array.isArray(dataObj.rows)) {
+          salesArray = dataObj.rows as Sale[];
+          totalCount = (dataObj.count as number) || dataObj.rows.length;
         } else {
           // Si no encuentra arrays, mostrar el objeto completo para depuración
           console.log('Estructura del objeto:', Object.keys(dataObj));
           salesArray = [];
+          totalCount = 0;
         }
+      }
+      
+      // Store the total count for pagination
+      if (useFilters && (filterStartDate && filterEndDate)) {
+        // When using filters, trust the backend pagination
+        setSales(salesArray);
+      } else {
+        // When loading all data, use client-side pagination
+        setSales(salesArray);
       }
       
       // Log de fechas de ventas para depuración
@@ -204,13 +254,51 @@ export default function ViewSalesPage() {
   // Apply filters function
   const applyFilters = () => {
     console.log('🔍 Aplicando filtros:', { startDate, endDate });
+    
+    // Force reset and apply new filters
     setFilterStartDate(startDate);
     setFilterEndDate(endDate);
-    setCurrentPage(1); // Reset to first page when applying filters
+    setCurrentPage(1);
+    
+    // Clear current sales immediately to show loading state
+    setSales([]);
+    
+    // Load sales with new filters
+    loadSales(true);
+  };
+
+  // Clear filters function
+  const clearFilters = () => {
+    console.log('🔍 Limpiando filtros');
+    const today = new Date().toLocaleDateString('en-CA', { 
+      timeZone: 'America/Bogota',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    
+    // Reset all filter states
+    setStartDate(today);
+    setEndDate(today);
+    setFilterStartDate(today);
+    setFilterEndDate(today);
+    setCurrentPage(1);
+    
+    // Clear current sales immediately to show loading state
+    setSales([]);
+    
+    // Load today's sales
+    loadSales(true);
   };
 
   // Get paginated data
   const getPaginatedSales = () => {
+    // If filters are active, use the data as-is (backend pagination)
+    if (filterStartDate && filterEndDate && filterStartDate !== today && filterEndDate !== today) {
+      return sales; // Backend already paginated
+    }
+    
+    // Otherwise, use client-side pagination
     const filteredSales = getFilteredSales();
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -219,10 +307,12 @@ export default function ViewSalesPage() {
 
   // Calculate pagination info
   const filteredSales = getFilteredSales();
-  const totalPages = Math.ceil(filteredSales.length / itemsPerPage);
-  const paginatedSales = getPaginatedSales();
+  const isUsingBackendPagination = filterStartDate && filterEndDate && filterStartDate !== today && filterEndDate !== today;
+  const displaySales = isUsingBackendPagination ? sales : getPaginatedSales();
+  const totalItems = isUsingBackendPagination ? sales.length : filteredSales.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
-  const endIndex = Math.min(currentPage * itemsPerPage, filteredSales.length);
+  const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
 
   // Calculate total sum of filtered sales
   const getFilteredTotal = () => {
@@ -357,12 +447,18 @@ export default function ViewSalesPage() {
                     className="w-full px-3 py-2 sm:px-4 sm:py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
-                <div className="flex items-end">
+                <div className="flex items-end gap-2">
                   <button
                     onClick={applyFilters}
-                    className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors text-sm sm:text-base"
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors text-sm sm:text-base"
                   >
                     Aplicar Filtros
+                  </button>
+                  <button
+                    onClick={clearFilters}
+                    className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-xl transition-colors text-sm sm:text-base"
+                  >
+                    Limpiar Filtros
                   </button>
                 </div>
               </div>
@@ -437,7 +533,7 @@ export default function ViewSalesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
-                  {paginatedSales.map((sale) => (
+                  {displaySales.map((sale: Sale) => (
                     <tr key={sale.sale_id} className="hover:bg-white/5 transition-colors">
                       <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                         <div className="text-white font-medium text-sm sm:text-base">#{sale.sale_id}</div>
@@ -464,7 +560,7 @@ export default function ViewSalesPage() {
                             </span>
                           ) : (
                             <div className="flex flex-col gap-1">
-                              {sale.payments.map((payment, index) => (
+                              {sale.payments.map((payment: any, index: number) => (
                                 <span key={index} className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                   payment.method === 'EFECTIVO' 
                                     ? 'bg-green-500/20 text-green-400 border border-green-400/30'

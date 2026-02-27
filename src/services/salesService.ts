@@ -9,9 +9,11 @@ export type CreateFullSalePayload = {
   observation?: string | null;
   items: Array<{
     variant_id: number;
-    flavor_id?: number | null;
+    flavor_name?: string | null;
     quantity: number;
     unit_price?: number;
+    is_promo_2x1?: boolean;
+    promo_reference?: string | null;
   }>;
   payments: Array<{
     method: PaymentMethodUI;
@@ -64,6 +66,21 @@ export const salesService = {
       method: 'GET',
     }),
 
+  getSalesWithFilters: (filters: { start_date?: string; end_date?: string; page?: number; limit?: number }) => {
+    const params = new URLSearchParams();
+    if (filters.start_date) params.append('start_date', filters.start_date);
+    if (filters.end_date) params.append('end_date', filters.end_date);
+    if (filters.page) params.append('page', filters.page.toString());
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    
+    const queryString = params.toString();
+    const url = queryString ? `/api/sales?${queryString}` : '/api/sales';
+    
+    return apiFetch<Sale[]>(url, {
+      method: 'GET',
+    });
+  },
+
   getSaleById: (id: number) =>
     apiFetch<Sale>(`/api/sales/${id}`, {
       method: 'GET',
@@ -95,6 +112,8 @@ export type Sale = {
     quantity: number;
     unit_price: number;
     line_total: number;
+    is_promo_2x1?: boolean;
+    promo_reference?: string | null;
   }>;
   payments: Array<{
     method: string;

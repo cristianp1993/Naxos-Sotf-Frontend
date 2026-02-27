@@ -16,6 +16,8 @@ type CartItem = {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  isPromo2x1?: boolean;
+  promoReference?: string | null;
 };
 
 export default function SalesPage() {
@@ -31,6 +33,9 @@ export default function SalesPage() {
   const [paymentMethod, setPaymentMethod] = useState<'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA' | 'OTRO'>('EFECTIVO');
   const [observation, setObservation] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+  const [is2x1Promo, setIs2x1Promo] = useState<boolean>(false);
+  const [promoCounter, setPromoCounter] = useState<number>(0);
+  const [currentPromoReference, setCurrentPromoReference] = useState<string | null>(null);
   const toast = useToast();
 
   // Cargar menú
@@ -47,6 +52,13 @@ export default function SalesPage() {
     };
     loadMenu();
   }, []);
+
+  // Resetear referencia de promoción cuando se desactiva el checkbox
+  useEffect(() => {
+    if (!is2x1Promo) {
+      setCurrentPromoReference(null);
+    }
+  }, [is2x1Promo]);
 
   const getVariantsForProduct = (productId: number): Variant[] =>
     menuData?.variantes?.filter((v) => v.product_id == productId) || [];
@@ -142,8 +154,41 @@ export default function SalesPage() {
       return;
     }
 
+    // Validación para promoción 2x1: mismo tamaño requerido
+    if (is2x1Promo && currentPromoReference) {
+      const existingPromoItems = cart.filter(item => 
+        item.isPromo2x1 && item.promoReference === currentPromoReference
+      );
+      
+      if (existingPromoItems.length > 0) {
+        const firstPromoItem = existingPromoItems[0];
+        if (firstPromoItem.variantId !== selectedVariant.variant_id) {
+          toast.error(`❌ La promoción 2x1 debe ser del mismo tamaño. Ya tienes ${firstPromoItem.variantName} en esta promoción.`);
+          return;
+        }
+      }
+    }
+
     const unitPrice = Number(selectedVariant.precio_actual ?? 0);
-    const lineTotal = Number((unitPrice * quantityNum).toFixed(2));
+    let lineTotal = Number((unitPrice * quantityNum).toFixed(2));
+    let promoReference: string | null = null;
+
+    // Si es promoción 2x1
+    if (is2x1Promo) {
+      // Crear o usar la referencia global de promoción
+      if (!currentPromoReference) {
+        setPromoCounter(prev => prev + 1);
+        const newReference = `2x1_${Date.now()}_${promoCounter + 1}`;
+        setCurrentPromoReference(newReference);
+        promoReference = newReference;
+      } else {
+        promoReference = currentPromoReference;
+      }
+      
+      // Calcular cuántos se pagan
+      const paidQuantity = Math.ceil(quantityNum / 2);
+      lineTotal = Number((unitPrice * paidQuantity).toFixed(2));
+    }
 
     const newItem: CartItem = {
       productId: selectedProduct.product_id,
@@ -152,14 +197,17 @@ export default function SalesPage() {
       variantName: selectedVariant.variant_name,
       flavor: selectedFlavor,
       quantity: quantityNum,
-      unitPrice,
+      unitPrice: is2x1Promo ? (lineTotal / quantityNum) : unitPrice,
       lineTotal,
+      isPromo2x1: is2x1Promo,
+      promoReference
     };
 
     setCart((prev) => [...prev, newItem]);
     
-    // Mostrar toast de éxito
-    toast.success(`${selectedVariant.variant_name} ${selectedFlavor ? `(${selectedFlavor})` : ''} agregado al carrito`);
+    // Mostrar toast de éxito con información de promoción
+    const promoText = is2x1Promo ? ' (2x1)' : '';
+    toast.success(`${selectedVariant.variant_name} ${selectedFlavor ? `(${selectedFlavor})` : ''}${promoText} agregado al carrito`);
     
     // Auto-scroll al carrito
     setTimeout(() => {
@@ -174,17 +222,153 @@ export default function SalesPage() {
     setSelectedFlavor(null);
     setSelectedVariant(null);
     setQuantity('1');
+    // NO resetear is2x1Promo para permitir agregar múltiples items con la misma promoción
     setActiveStep('select');
   };
 
   const removeFromCart = (index: number) => {
+    const itemToRemove = cart[index];
+    
+    // Verificar si se está eliminando un elemento de una promoción 2x1
+    if (itemToRemove.isPromo2x1 && itemToRemove.promoReference) {
+      const samePromoItems = cart.filter(item => 
+        item.isPromo2x1 && 
+        item.promoReference === itemToRemove.promoReference &&
+        item !== itemToRemove
+      );
+      
+      if (samePromoItems.length === 1) {
+        // Quedará una promoción incompleta
+        const remainingItem = samePromoItems[0];
+        toast.warning(`⚠️ Eliminaste un elemento 2x1. La promoción quedará incompleta. Debes agregar otro ${remainingItem.variantName} o eliminar el elemento restante.`);
+      }
+    }
+    
     setCart((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const total = cart.reduce((sum, item) => sum + item.lineTotal, 0);
+  const clearCart = () => {
+    setCart([]);
+    setIs2x1Promo(false);
+    setPromoCounter(0);
+    setCurrentPromoReference(null);
+  };
+
+  const startNewPromo = () => {
+    setCurrentPromoReference(null);
+    toast.info('🎯 Nueva promoción 2x1 iniciada. Agrega productos del mismo tamaño.');
+  };
+
+  // Función para agrupar promociones 2x1 y calcular totales correctos
+  const getProcessedCart = (): CartItem[] => {
+    const processedItems: CartItem[] = [];
+    const promoGroups: { [key: string]: CartItem[] } = {};
+    
+    // Agrupar items por referencia de promoción
+    cart.forEach(item => {
+      if (item.isPromo2x1 && item.promoReference) {
+        if (!promoGroups[item.promoReference]) {
+          promoGroups[item.promoReference] = [];
+        }
+        promoGroups[item.promoReference].push(item);
+      } else {
+        processedItems.push(item);
+      }
+    });
+    
+    // Procesar cada grupo de promoción 2x1
+    Object.keys(promoGroups).forEach(ref => {
+      const groupItems = promoGroups[ref];
+      
+      if (groupItems.length === 2) {
+        // Es una promoción 2x1 válida: el primero con precio normal, el segundo en 0
+        const firstItem = { ...groupItems[0] };
+        const secondItem = { ...groupItems[1] };
+        
+        // El primer item mantiene su precio
+        firstItem.lineTotal = firstItem.unitPrice * firstItem.quantity;
+        
+        // El segundo item va en $0
+        secondItem.unitPrice = 0;
+        secondItem.lineTotal = 0;
+        
+        processedItems.push(firstItem, secondItem);
+      } else {
+        // Si no es un par completo, todos pagan precio normal
+        groupItems.forEach(item => {
+          processedItems.push(item);
+        });
+      }
+    });
+    
+    return processedItems;
+  };
+
+  const processedCart = getProcessedCart();
+  const total = processedCart.reduce((sum, item) => sum + item.lineTotal, 0);
+  // Función para generar observación automática con promociones
+  const generateAutoObservation = () => {
+    const promoGroups: { [key: string]: CartItem[] } = {};
+    
+    // Agrupar items por referencia de promoción
+    cart.forEach(item => {
+      if (item.isPromo2x1 && item.promoReference) {
+        if (!promoGroups[item.promoReference]) {
+          promoGroups[item.promoReference] = [];
+        }
+        promoGroups[item.promoReference].push(item);
+      }
+    });
+    
+    if (Object.keys(promoGroups).length === 0) {
+      return '';
+    }
+    
+    const promoDetails = Object.keys(promoGroups).map(ref => {
+      const group = promoGroups[ref];
+      const firstItem = group[0];
+      return `${firstItem.variantName} 2x1 (${group.map(item => item.flavor || 'Sin sabor').join(' + ')})`;
+    });
+    
+    return `Promo 2x1 incluida: ${promoDetails.join(', ')}`;
+  };
+
+  // Actualizar observación automáticamente cuando cambia el carrito
+  useEffect(() => {
+    if (!observation) { // Solo si el campo está vacío
+      const autoObs = generateAutoObservation();
+      if (autoObs) {
+        setObservation(autoObs);
+      }
+    }
+  }, [cart]);
 
   const proceedToPayment = () => {
     if (cart.length === 0) return;
+
+    // Validar que no haya promociones 2x1 incompletas
+    const promoGroups: { [key: string]: CartItem[] } = {};
+    
+    cart.forEach(item => {
+      if (item.isPromo2x1 && item.promoReference) {
+        if (!promoGroups[item.promoReference]) {
+          promoGroups[item.promoReference] = [];
+        }
+        promoGroups[item.promoReference].push(item);
+      }
+    });
+    
+    // Verificar si alguna promoción está incompleta (solo 1 elemento)
+    const incompletePromos = Object.keys(promoGroups).filter(ref => 
+      promoGroups[ref].length === 1
+    );
+    
+    if (incompletePromos.length > 0) {
+      const incompleteItem = promoGroups[incompletePromos[0]][0];
+      toast.error(`❌ Promoción 2x1 incompleta. Debes agregar otro ${incompleteItem.variantName} para completar la promoción o eliminar el elemento actual.`);
+      return;
+    }
+
     setActiveStep('payment');
   };
 
@@ -215,14 +399,17 @@ export default function SalesPage() {
 
     setSubmitting(true);
     try {
+      // Usar processedCart para enviar los precios correctos de 2x1
       const payload: CreateFullSalePayload = {
         location_id: 1, // Por defecto location_id = 1
         observation: observation.trim() || null,
-        items: cart.map((item) => ({
+        items: processedCart.map((item) => ({
           variant_id: item.variantId,
           flavor_name: item.flavor || null, // Enviar nombre en lugar de ID
           quantity: item.quantity,
           unit_price: item.unitPrice,
+          is_promo_2x1: item.isPromo2x1 || false,
+          promo_reference: item.promoReference || null
         })),
         payments: [
           {
@@ -233,15 +420,17 @@ export default function SalesPage() {
         ],
       };
 
-      console.log('� DEBUG - Frontend enviando observation:', observation);
+      console.log('🔍 DEBUG - Frontend enviando observation:', observation);
       console.log('🔍 DEBUG - Payload observation:', payload.observation);
+      console.log('🔍 DEBUG - Payload con promociones procesadas:', JSON.stringify(payload, null, 2));
 
-      console.log('�� Enviando venta:', JSON.stringify(payload, null, 2));
       await salesService.createFullSale(payload);
       toast.success('¡Venta registrada exitosamente! ');
       setCart([]);
       setObservation('');
       setActiveStep('select');
+      setPromoCounter(0);
+      setCurrentPromoReference(null);
     } catch (err: any) {
       console.error('❌ Error en venta:', err);
       toast.error(err.message || 'Error al registrar la venta');
@@ -317,20 +506,38 @@ export default function SalesPage() {
         {/* Carrito resumen (siempre visible en móvil) */}
         {cart.length > 0 && (
           <div id="cart-summary" className="mb-6 rounded-3xl border border-white/20 bg-white/10 p-4 backdrop-blur-lg shadow-xl">
-            <h3 className="text-lg font-black text-purple-100 mb-2">Carrito</h3>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-black text-purple-100">Carrito</h3>
+              <button
+                onClick={clearCart}
+                className="text-xs text-red-400 hover:text-red-300 font-medium"
+              >
+                🗑️ Limpiar
+              </button>
+            </div>
             <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-              {cart.map((item, idx) => (
+              {processedCart.map((item, idx) => (
                 <div key={idx} className="flex justify-between items-center text-sm">
-                  <span className="text-purple-200">
-                    {item.quantity}x {item.variantName} {item.flavor ? `(${item.flavor})` : ''}
-                  </span>
+                  <div className="flex-1">
+                    <div className="text-purple-200">
+                      {item.quantity}x {item.variantName} {item.flavor ? `(${item.flavor})` : ''}
+                      {item.isPromo2x1 && (
+                        <span className="ml-2 px-2 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-400/30">
+                          2x1
+                        </span>
+                      )}
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2">
                     <span className="text-white font-bold">{formatRD(item.lineTotal)}</span>
                     <button
                       onClick={() => removeFromCart(idx)}
-                      className="text-red-400 hover:text-red-300"
+                      className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded-lg transition-colors"
+                      title="Eliminar producto"
                     >
-                      ×
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -454,6 +661,32 @@ export default function SalesPage() {
                           </button>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Promoción 2x1 */}
+                    <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                      <input
+                        type="checkbox"
+                        id="promo-2x1"
+                        checked={is2x1Promo}
+                        onChange={(e) => setIs2x1Promo(e.target.checked)}
+                        className="w-4 h-4 text-purple-600 bg-white/10 border-white/20 rounded focus:ring-purple-500 focus:ring-2"
+                      />
+                      <label htmlFor="promo-2x1" className="text-purple-200 font-medium cursor-pointer select-none">
+                        🎯 Promoción 2x1
+                        <span className="text-xs text-purple-300 ml-2">
+                          (Lleva 2, paga 1)
+                        </span>
+                      </label>
+                      {is2x1Promo && currentPromoReference && (
+                        <button
+                          onClick={startNewPromo}
+                          className="ml-auto px-3 py-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-xs font-medium rounded-lg transition-colors"
+                          title="Iniciar nueva promoción"
+                        >
+                          🔄 Nueva promo
+                        </button>
+                      )}
                     </div>
 
                     <button
