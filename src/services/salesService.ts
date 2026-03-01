@@ -76,7 +76,34 @@ export const salesService = {
     const queryString = params.toString();
     const url = queryString ? `/api/sales?${queryString}` : '/api/sales';
     
-    return apiFetch<Sale[]>(url, {
+    return apiFetch<{
+      sales: Sale[];
+      total: number;
+      totals: {
+        grand_total: number;
+        payment_methods: Record<string, number>;
+      };
+    }>(url, {
+      method: 'GET',
+    });
+  },
+
+  getSalesWithFiltersTotals: (filters: { start_date?: string; end_date?: string }) => {
+    const params = new URLSearchParams();
+    if (filters.start_date) params.append('start_date', filters.start_date);
+    if (filters.end_date) params.append('end_date', filters.end_date);
+    params.append('totals_only', 'true');
+    
+    const queryString = params.toString();
+    const url = `/api/sales?${queryString}`;
+    
+    return apiFetch<{
+      totals: {
+        grand_total: number;
+        payment_methods: Record<string, number>;
+        total_count: number;
+      };
+    }>(url, {
       method: 'GET',
     });
   },

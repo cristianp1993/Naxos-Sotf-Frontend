@@ -17,6 +17,15 @@ export default function ViewSalesPage() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  
+  // Totals from backend
+  const [backendTotals, setBackendTotals] = useState<{
+    grand_total: number;
+    payment_methods: Record<string, number>;
+    total_count: number;
+  } | null>(null);
   
   // Date filter states - set to current date by default (Colombia timezone)
   const today = new Date().toLocaleDateString('en-CA', { 
@@ -70,10 +79,25 @@ export default function ViewSalesPage() {
           page: currentPage,
           limit: itemsPerPage
         });
+        
+        // Load totals separately for complete data
+        try {
+          const totalsData = await salesService.getSalesWithFiltersTotals({
+            start_date: filterStartDate,
+            end_date: filterEndDate
+          });
+          setBackendTotals(totalsData.totals);
+          setTotalItems(totalsData.totals.total_count);
+          setTotalPages(Math.ceil(totalsData.totals.total_count / itemsPerPage));
+        } catch (totalsError) {
+          console.warn('No se pudieron cargar los totales:', totalsError);
+          setBackendTotals(null);
+        }
       } else {
         // Load all sales without filters (fallback)
         console.log('🔍 Cargando todas las ventas');
         data = await salesService.getAllSales();
+        setBackendTotals(null);
       }
       
       console.log('Datos recibidos del API:', data);
@@ -120,6 +144,8 @@ export default function ViewSalesPage() {
       } else {
         // When loading all data, use client-side pagination
         setSales(salesArray);
+        setTotalItems(totalCount);
+        setTotalPages(Math.ceil(totalCount / itemsPerPage));
       }
       
       // Log de fechas de ventas para depuración
@@ -309,13 +335,16 @@ export default function ViewSalesPage() {
   const filteredSales = getFilteredSales();
   const isUsingBackendPagination = filterStartDate && filterEndDate && filterStartDate !== today && filterEndDate !== today;
   const displaySales = isUsingBackendPagination ? sales : getPaginatedSales();
-  const totalItems = isUsingBackendPagination ? sales.length : filteredSales.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const currentTotalItems = isUsingBackendPagination ? totalItems : filteredSales.length;
+  const currentTotalPages = isUsingBackendPagination ? totalPages : Math.ceil(filteredSales.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
-  const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
+  const endIndex = Math.min(currentPage * itemsPerPage, currentTotalItems);
 
-  // Calculate total sum of filtered sales
+  // Calculate totals - use backend totals when available, otherwise calculate from filtered data
   const getFilteredTotal = () => {
+    if (isUsingBackendPagination && backendTotals) {
+      return backendTotals.grand_total;
+    }
     return filteredSales.reduce((sum, sale) => {
       console.log('🔍 Debug total:', {
         saleId: sale.sale_id,
@@ -330,6 +359,10 @@ export default function ViewSalesPage() {
 
   // Calculate totals by payment method
   const getPaymentMethodTotals = () => {
+    if (isUsingBackendPagination && backendTotals) {
+      return backendTotals.payment_methods;
+    }
+    
     const totals: Record<string, number> = {};
     
     filteredSales.forEach(sale => {
@@ -483,9 +516,9 @@ export default function ViewSalesPage() {
                 </select>
               </div>
               
-              {filteredSales.length > 0 && (
+              {currentTotalItems > 0 && (
                 <div className="text-purple-200 text-xs sm:text-sm">
-                  Mostrando {startIndex} a {endIndex} de {filteredSales.length} ventas
+                  Mostrando {startIndex} a {endIndex} de {currentTotalItems} ventas
                 </div>
               )}
             </div>
@@ -632,7 +665,7 @@ export default function ViewSalesPage() {
             </div>
 
             {/* Filter Total Row */}
-            {filteredSales.length > 0 && (
+            {currentTotalItems > 0 && (
               <div className="bg-white/5 border-t border-white/20 px-4 sm:px-6 py-3 sm:py-4">
                 <div className="space-y-3">
                   {/* Payment Method Breakdown */}
@@ -665,7 +698,7 @@ export default function ViewSalesPage() {
                   {/* Grand Total */}
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-3 border-t border-white/10">
                     <div className="text-purple-200 text-xs sm:text-sm">
-                      Total de {filteredSales.length} ventas filtradas
+                      Total de {isUsingBackendPagination && backendTotals ? backendTotals.total_count : filteredSales.length} ventas filtradas
                     </div>
                     <div className="text-white font-bold text-lg sm:text-xl">
                       {formatCurrency(filteredTotal)}
@@ -676,11 +709,11 @@ export default function ViewSalesPage() {
             )}
 
             {/* Pagination Controls Bottom */}
-            {totalPages > 1 && (
+            {currentTotalPages > 1 && (
               <div className="bg-white/5 border-t border-white/20 px-4 sm:px-6 py-3 sm:py-4">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div className="text-purple-200 text-xs sm:text-sm">
-                    Página {currentPage} de {totalPages}
+                    Página {currentPage} de {currentTotalPages}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -693,14 +726,14 @@ export default function ViewSalesPage() {
                     
                     {/* Page Numbers */}
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      {Array.from({ length: Math.min(5, currentTotalPages) }, (_, i) => {
                         let pageNum;
-                        if (totalPages <= 5) {
+                        if (currentTotalPages <= 5) {
                           pageNum = i + 1;
                         } else if (currentPage <= 3) {
                           pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
+                        } else if (currentPage >= currentTotalPages - 2) {
+                          pageNum = currentTotalPages - 4 + i;
                         } else {
                           pageNum = currentPage - 2 + i;
                         }
@@ -722,8 +755,8 @@ export default function ViewSalesPage() {
                     </div>
                     
                     <button
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(prev => Math.min(currentTotalPages, prev + 1))}
+                      disabled={currentPage === currentTotalPages}
                       className="px-3 py-1 sm:px-4 sm:py-2 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-xs sm:text-sm"
                     >
                       Siguiente
