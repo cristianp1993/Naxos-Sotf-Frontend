@@ -93,7 +93,6 @@ export default function ViewSalesPage() {
         
         // 🔥 Si la respuesta principal ya incluye totales, usarlos directamente
         if (data && data.totals) {
-          console.log('🔍 Usando totales de la respuesta principal:', data.totals);
           setBackendTotals({
             grand_total: data.totals.grand_total || 0,
             payment_methods: data.totals.payment_methods || {},
@@ -109,8 +108,6 @@ export default function ViewSalesPage() {
               end_date: filterEndDate
             });
             
-            console.log('🔍 Totales separados cargados:', totalsData?.totals);
-            
             // 🔥 Asegurarnos que backendTotals siempre tenga los datos correctos
             if (totalsData && totalsData.totals) {
               setBackendTotals(totalsData.totals);
@@ -123,7 +120,6 @@ export default function ViewSalesPage() {
               setTotalPages(0);
             }
           } catch (totalsError) {
-            console.log('🔍 Error cargando totales separados:', totalsError);
             // Si hay error cargando totales, establecer valores por defecto para evitar cálculos locales incorrectos
             setBackendTotals({ grand_total: 0, payment_methods: {}, total_count: 0 });
             setTotalItems(0);
