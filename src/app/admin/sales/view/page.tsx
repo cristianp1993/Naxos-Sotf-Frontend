@@ -305,8 +305,8 @@ export default function ViewSalesPage() {
 
   // Get paginated data
   const getPaginatedSales = () => {
-    // If filters are active, use the data as-is (backend pagination)
-    if (filterStartDate && filterEndDate && filterStartDate !== today && filterEndDate !== today) {
+    // 🔥 CORRECCIÓN: Si hay filtros, usar los datos del backend (ya paginados)
+    if (filterStartDate && filterEndDate) {
       return sales; // Backend already paginated
     }
     
@@ -319,7 +319,12 @@ export default function ViewSalesPage() {
 
   // Calculate pagination info
   const filteredSales = getFilteredSales();
-  const isUsingBackendPagination = filterStartDate && filterEndDate && filterStartDate !== today && filterEndDate !== today;
+  // 🔥 CORRECCIÓN: Usar backend pagination SIEMPRE que haya filtros (incluso si es el día de hoy)
+  const isUsingBackendPagination = filterStartDate && filterEndDate;
+  //console.log('🔍 Debug - Filtros:', { filterStartDate, filterEndDate, today });
+  //console.log('🔍 Debug - isUsingBackendPagination:', isUsingBackendPagination);
+  //console.log('🔍 Debug - backendTotals:', backendTotals);
+  //console.log('🔍 Debug - totalItems:', totalItems, 'totalPages:', totalPages);
   const displaySales = isUsingBackendPagination ? sales : getPaginatedSales();
   const currentTotalItems = isUsingBackendPagination ? totalItems : filteredSales.length;
   const currentTotalPages = isUsingBackendPagination ? totalPages : Math.ceil(filteredSales.length / itemsPerPage);
