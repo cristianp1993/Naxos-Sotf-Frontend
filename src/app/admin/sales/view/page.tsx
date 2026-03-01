@@ -28,12 +28,16 @@ export default function ViewSalesPage() {
   } | null>(null);
   
   // Date filter states - set to current date by default (Colombia timezone)
-  const today = new Date().toLocaleDateString('en-CA', { 
-    timeZone: 'America/Bogota',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }); // Format: YYYY-MM-DD in Colombia timezone
+  const getColombiaDate = () => {
+    const now = new Date();
+    // Asegurar hora Colombia restando 5 horas si es necesario
+    const colombiaTime = new Date(now.getTime() - (5 * 60 * 60 * 1000));
+    return colombiaTime.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+  };
+  
+  const today = getColombiaDate();
+  console.log('🔍 Frontend - Fecha Colombia calculada:', today);
+  
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   
