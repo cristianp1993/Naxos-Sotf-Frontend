@@ -36,7 +36,6 @@ export default function ViewSalesPage() {
   };
   
   const today = getColombiaDate();
-  console.log('🔍 Frontend - Fecha Colombia calculada:', today);
   
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
@@ -76,7 +75,6 @@ export default function ViewSalesPage() {
       
       if (useFilters && (filterStartDate && filterEndDate)) {
         // Use filtered API call
-        console.log('🔍 Cargando ventas con filtros:', { filterStartDate, filterEndDate });
         data = await salesService.getSalesWithFilters({
           start_date: filterStartDate,
           end_date: filterEndDate,
@@ -108,7 +106,6 @@ export default function ViewSalesPage() {
         }
       } else {
         // Load all sales without filters (fallback)
-        console.log('🔍 Cargando todas las ventas');
         data = await salesService.getAllSales();
         
         // 🔥 Ordenar todas las ventas por fecha descendente
@@ -122,10 +119,6 @@ export default function ViewSalesPage() {
         
         setBackendTotals(null);
       }
-      
-      console.log('Datos recibidos del API:', data);
-      console.log('Tipo de dato:', typeof data);
-      console.log('Es array?:', Array.isArray(data));
       
       // Si data es un objeto con propiedad sales, usar esa
       // Si es un array directamente, usarlo
@@ -170,20 +163,8 @@ export default function ViewSalesPage() {
         setTotalItems(totalCount);
         setTotalPages(Math.ceil(totalCount / itemsPerPage));
       }
-      
-      // Log de fechas de ventas para depuración
-      salesArray.forEach((sale, index) => {
-        console.log(`🔍 Venta ${index + 1}:`, {
-          id: sale.sale_id,
-          opened_at: sale.opened_at,
-          date_obj: new Date(sale.opened_at),
-          date_only: new Date(sale.opened_at).toISOString().split('T')[0]
-        });
-      });
-      
       setSales(salesArray);
     } catch (err) {
-      console.error('Error loading sales:', err);
       setError('Error al cargar las ventas');
     } finally {
       setLoading(false);
@@ -296,14 +277,11 @@ export default function ViewSalesPage() {
       return matches;
     });
     
-    console.log('🔍 Ventas filtradas:', filtered.length);
     return filtered;
   };
 
   // Apply filters function
   const applyFilters = () => {
-    console.log('🔍 Aplicando filtros:', { startDate, endDate });
-    
     // Force reset and apply new filters
     setFilterStartDate(startDate);
     setFilterEndDate(endDate);
@@ -318,7 +296,6 @@ export default function ViewSalesPage() {
 
   // Clear filters function
   const clearFilters = () => {
-    console.log('🔍 Limpiando filtros');
     const today = new Date().toLocaleDateString('en-CA', { 
       timeZone: 'America/Bogota',
       year: 'numeric',
@@ -366,15 +343,12 @@ export default function ViewSalesPage() {
   // Calculate totals - use backend totals when available, otherwise calculate from filtered data
   const getFilteredTotal = () => {
     if (isUsingBackendPagination && backendTotals && backendTotals.grand_total !== undefined && backendTotals.grand_total !== null) {
-      console.log('🔍 Usando backend total:', backendTotals.grand_total);
       return backendTotals.grand_total;
     }
     
-    console.log('🔍 Calculando total desde ventas filtradas:', filteredSales.length);
     return filteredSales.reduce((sum, sale) => {
       const total = typeof sale.total === 'string' ? parseFloat(sale.total) : sale.total;
       const validTotal = total || 0;
-      console.log('🔍 Sumando venta:', sale.sale_id, 'total:', validTotal);
       return sum + validTotal;
     }, 0);
   };
@@ -382,8 +356,6 @@ export default function ViewSalesPage() {
   // Calculate totals by payment method
   const getPaymentMethodTotals = () => {
     if (isUsingBackendPagination && backendTotals && backendTotals.payment_methods && typeof backendTotals.payment_methods === 'object') {
-      console.log('🔍 Usando backend payment methods:', backendTotals.payment_methods);
-      
       // 🔥 Mapear métodos de pago de BD a UI
       const mappedTotals: Record<string, number> = {};
       const paymentMapping: Record<string, string> = {
@@ -399,11 +371,9 @@ export default function ViewSalesPage() {
         mappedTotals[uiMethod] = amount || 0;
       });
       
-      console.log('🔍 Payment methods mapeados:', mappedTotals);
       return mappedTotals;
     }
     
-    console.log('🔍 Calculando payment methods desde ventas filtradas:', filteredSales.length);
     const totals: Record<string, number> = {};
     const paymentMapping: Record<string, string> = {
       'CASH': 'EFECTIVO',
@@ -424,13 +394,10 @@ export default function ViewSalesPage() {
             totals[method] = 0;
           }
           totals[method] += validAmount;
-          
-          console.log('🔍 Payment:', method, 'amount:', validAmount);
         });
       }
     });
     
-    console.log('🔍 Payment totals calculados:', totals);
     return totals;
   };
 
@@ -445,19 +412,16 @@ export default function ViewSalesPage() {
   // 🔥 Recargar ventas cuando cambia la página (solo con filtros)
   useEffect(() => {
     if (filterStartDate && filterEndDate && filterStartDate !== today && filterEndDate !== today) {
-      console.log('🔍 Cambio de página detectado, recargando ventas:', currentPage);
       loadSales(true);
     }
   }, [currentPage]);
 
   const formatCurrency = (amount: number) => {
-    console.log('🔍 formatCurrency input:', { amount, type: typeof amount });
     const formatted = new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0
     }).format(amount);
-    console.log('🔍 formatCurrency output:', formatted);
     return formatted;
   };
 
@@ -781,7 +745,6 @@ export default function ViewSalesPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
-                        console.log('🔍 Navegando a página anterior:', currentPage, '->', Math.max(1, currentPage - 1));
                         setCurrentPage(Math.max(1, currentPage - 1));
                       }}
                       disabled={currentPage === 1}
@@ -808,7 +771,6 @@ export default function ViewSalesPage() {
                           <button
                             key={pageNum}
                             onClick={() => {
-                              console.log('🔍 Navegando a página:', currentPage, '->', pageNum);
                               setCurrentPage(pageNum);
                             }}
                             className={`px-2 py-1 sm:px-3 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm ${
@@ -825,7 +787,6 @@ export default function ViewSalesPage() {
                     
                     <button
                       onClick={() => {
-                        console.log('🔍 Navegando a página siguiente:', currentPage, '->', Math.min(currentTotalPages, currentPage + 1));
                         setCurrentPage(Math.min(currentTotalPages, currentPage + 1));
                       }}
                       disabled={currentPage === currentTotalPages}
