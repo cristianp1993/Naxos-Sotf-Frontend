@@ -91,18 +91,44 @@ export default function ViewSalesPage() {
           });
         }
         
-        // Load totals separately for complete data
-        try {
-          const totalsData = await salesService.getSalesWithFiltersTotals({
-            start_date: filterStartDate,
-            end_date: filterEndDate
+        // 🔥 Si la respuesta principal ya incluye totales, usarlos directamente
+        if (data && data.totals) {
+          console.log('🔍 Usando totales de la respuesta principal:', data.totals);
+          setBackendTotals({
+            grand_total: data.totals.grand_total || 0,
+            payment_methods: data.totals.payment_methods || {},
+            total_count: data.total || 0
           });
-          setBackendTotals(totalsData.totals);
-          setTotalItems(totalsData.totals.total_count);
-          setTotalPages(Math.ceil(totalsData.totals.total_count / itemsPerPage));
-        } catch (totalsError) {
-          console.warn('No se pudieron cargar los totales:', totalsError);
-          setBackendTotals(null);
+          setTotalItems(data.total || 0);
+          setTotalPages(Math.ceil((data.total || 0) / itemsPerPage));
+        } else {
+          // Load totals separately for complete data
+          try {
+            const totalsData = await salesService.getSalesWithFiltersTotals({
+              start_date: filterStartDate,
+              end_date: filterEndDate
+            });
+            
+            console.log('🔍 Totales separados cargados:', totalsData?.totals);
+            
+            // 🔥 Asegurarnos que backendTotals siempre tenga los datos correctos
+            if (totalsData && totalsData.totals) {
+              setBackendTotals(totalsData.totals);
+              setTotalItems(totalsData.totals.total_count || 0);
+              setTotalPages(Math.ceil((totalsData.totals.total_count || 0) / itemsPerPage));
+            } else {
+              // Si no hay totales, establecer valores por defecto
+              setBackendTotals({ grand_total: 0, payment_methods: {}, total_count: 0 });
+              setTotalItems(0);
+              setTotalPages(0);
+            }
+          } catch (totalsError) {
+            console.log('🔍 Error cargando totales separados:', totalsError);
+            // Si hay error cargando totales, establecer valores por defecto para evitar cálculos locales incorrectos
+            setBackendTotals({ grand_total: 0, payment_methods: {}, total_count: 0 });
+            setTotalItems(0);
+            setTotalPages(0);
+          }
         }
       } else {
         // Load all sales without filters (fallback)
@@ -147,7 +173,6 @@ export default function ViewSalesPage() {
           totalCount = (dataObj.count as number) || dataObj.rows.length;
         } else {
           // Si no encuentra arrays, mostrar el objeto completo para depuración
-          console.log('Estructura del objeto:', Object.keys(dataObj));
           salesArray = [];
           totalCount = 0;
         }
@@ -201,28 +226,6 @@ export default function ViewSalesPage() {
   };
 
   const handleEdit = (sale: Sale) => {
-    console.log('🔍 handleEdit sale data:', JSON.stringify(sale, null, 2));
-    console.log('🔍 sale.total:', sale.total, typeof sale.total);
-    console.log('🔍 sale.items:', sale.items);
-    if (sale.items && sale.items.length > 0) {
-      const firstItem = sale.items[0];
-      console.log('🔍 first item:', firstItem);
-      console.log('🔍 first item keys:', Object.keys(firstItem));
-      console.log('🔍 first item complete:', JSON.stringify(firstItem, null, 2));
-      console.log('🔍 first item.unit_price:', firstItem.unit_price, typeof firstItem.unit_price);
-      console.log('🔍 first item.line_total:', firstItem.line_total, typeof firstItem.line_total);
-      // Buscar variant_id en diferentes propiedades posibles
-      console.log('🔍 looking for variant_id:');
-      console.log('  - item.variant_id:', (firstItem as any).variant_id);
-      console.log('  - item.item_id:', (firstItem as any).item_id);
-      console.log('  - item.id:', (firstItem as any).id);
-      console.log('  - item.sale_item_id:', (firstItem as any).sale_item_id);
-    }
-    console.log('🔍 sale.payments:', sale.payments);
-    if (sale.payments && sale.payments.length > 0) {
-      console.log('🔍 first payment:', sale.payments[0]);
-      console.log('🔍 first payment.amount:', sale.payments[0].amount, typeof sale.payments[0].amount);
-    }
     setSelectedSale(sale);
     setIsEditModalOpen(true);
   };
@@ -239,9 +242,6 @@ export default function ViewSalesPage() {
 
   // Filter sales by date range
   const getFilteredSales = () => {
-    console.log('🔍 Filtro aplicado:', { filterStartDate, filterEndDate });
-    console.log('🔍 Ventas totales:', sales.length);
-    
     if (!filterStartDate && !filterEndDate) return sales;
     
     const filtered = sales.filter(sale => {
@@ -263,16 +263,6 @@ export default function ViewSalesPage() {
       if (filterEndDate) {
         matches = matches && saleDateOnly <= filterEndDate;
       }
-      
-      console.log('🔍 Venta:', {
-        id: sale.sale_id,
-        opened_at: sale.opened_at,
-        saleDateUTC: saleDate.toISOString().split('T')[0],
-        saleDateColombia: saleDateOnly,
-        filterStartDate,
-        filterEndDate,
-        matches
-      });
       
       return matches;
     });
@@ -340,12 +330,14 @@ export default function ViewSalesPage() {
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
   const endIndex = Math.min(currentPage * itemsPerPage, currentTotalItems);
 
-  // Calculate totals - use backend totals when available, otherwise calculate from filtered data
+  // Calculate totals - SIEMPRE usar backend totals cuando hay filtros
   const getFilteredTotal = () => {
-    if (isUsingBackendPagination && backendTotals && backendTotals.grand_total !== undefined && backendTotals.grand_total !== null) {
-      return backendTotals.grand_total;
+    // 🔥 CUANDO HAY FILTROS, SIEMPRE USAR TOTALES DEL BACKEND
+    if (isUsingBackendPagination && backendTotals) {
+      return backendTotals.grand_total || 0;
     }
     
+    // Solo calcular localmente si no hay filtros (ventas de hoy)
     return filteredSales.reduce((sum, sale) => {
       const total = typeof sale.total === 'string' ? parseFloat(sale.total) : sale.total;
       const validTotal = total || 0;
@@ -353,8 +345,9 @@ export default function ViewSalesPage() {
     }, 0);
   };
 
-  // Calculate totals by payment method
+  // Calculate totals by payment method - SIEMPRE usar backend totals cuando hay filtros
   const getPaymentMethodTotals = () => {
+    // 🔥 CUANDO HAY FILTROS, SIEMPRE USAR TOTALES DEL BACKEND
     if (isUsingBackendPagination && backendTotals && backendTotals.payment_methods && typeof backendTotals.payment_methods === 'object') {
       // 🔥 Mapear métodos de pago de BD a UI
       const mappedTotals: Record<string, number> = {};
@@ -374,6 +367,7 @@ export default function ViewSalesPage() {
       return mappedTotals;
     }
     
+    // Solo calcular localmente si no hay filtros (ventas de hoy)
     const totals: Record<string, number> = {};
     const paymentMapping: Record<string, string> = {
       'CASH': 'EFECTIVO',
@@ -1033,8 +1027,6 @@ export default function ViewSalesPage() {
               <button
                 onClick={async () => {
                   try {
-                    console.log('🔍 Guardando cambios en backend:', selectedSale);
-                    
                     // Preparar el payload para el backend - items y pagos
                     const updatePayload = {
                       observation: selectedSale.observation,
@@ -1042,12 +1034,6 @@ export default function ViewSalesPage() {
                         // Buscar variant_id en diferentes propiedades posibles
                         const itemAny = item as any;
                         const variantId = itemAny.variant_id || itemAny.item_id || itemAny.id || itemAny.sale_item_id;
-                        
-                        console.log('🔍 Processing item:', {
-                          itemName: item.product_name,
-                          variantId,
-                          availableKeys: Object.keys(itemAny)
-                        });
                         
                         if (!variantId || variantId === 0) {
                           console.warn('⚠️ No variant_id found for item:', item.product_name);
@@ -1069,8 +1055,6 @@ export default function ViewSalesPage() {
                       }))
                     };
                     
-                    console.log('🔍 Payload para backend:', updatePayload);
-                    
                     // Validar que haya items y pagos
                     if (updatePayload.items.length === 0) {
                       throw new Error('Se requiere al menos un item');
@@ -1082,7 +1066,6 @@ export default function ViewSalesPage() {
                     
                     // Llamar al backend para actualizar
                     const response = await salesService.updateSale(selectedSale.sale_id, updatePayload);
-                    console.log('🔍 Respuesta del backend:', response);
                     
                     toast.success('Cambios guardados correctamente');
                     setIsEditModalOpen(false);
