@@ -346,27 +346,28 @@ export default function ViewSalesPage() {
 
   // Calculate totals - use backend totals when available, otherwise calculate from filtered data
   const getFilteredTotal = () => {
-    if (isUsingBackendPagination && backendTotals) {
+    if (isUsingBackendPagination && backendTotals && backendTotals.grand_total !== undefined && backendTotals.grand_total !== null) {
+      console.log('🔍 Usando backend total:', backendTotals.grand_total);
       return backendTotals.grand_total;
     }
+    
+    console.log('🔍 Calculando total desde ventas filtradas:', filteredSales.length);
     return filteredSales.reduce((sum, sale) => {
-      console.log('🔍 Debug total:', {
-        saleId: sale.sale_id,
-        total: sale.total,
-        type: typeof sale.total,
-        parsed: typeof sale.total === 'string' ? parseFloat(sale.total) : sale.total
-      });
       const total = typeof sale.total === 'string' ? parseFloat(sale.total) : sale.total;
-      return sum + (total || 0);
+      const validTotal = total || 0;
+      console.log('🔍 Sumando venta:', sale.sale_id, 'total:', validTotal);
+      return sum + validTotal;
     }, 0);
   };
 
   // Calculate totals by payment method
   const getPaymentMethodTotals = () => {
-    if (isUsingBackendPagination && backendTotals) {
+    if (isUsingBackendPagination && backendTotals && backendTotals.payment_methods && typeof backendTotals.payment_methods === 'object') {
+      console.log('🔍 Usando backend payment methods:', backendTotals.payment_methods);
       return backendTotals.payment_methods;
     }
     
+    console.log('🔍 Calculando payment methods desde ventas filtradas:', filteredSales.length);
     const totals: Record<string, number> = {};
     
     filteredSales.forEach(sale => {
@@ -374,15 +375,19 @@ export default function ViewSalesPage() {
         sale.payments.forEach(payment => {
           const method = payment.method || 'SIN METODO';
           const amount = typeof payment.amount === 'string' ? parseFloat(payment.amount) : payment.amount;
+          const validAmount = amount || 0;
           
           if (!totals[method]) {
             totals[method] = 0;
           }
-          totals[method] += (amount || 0);
+          totals[method] += validAmount;
+          
+          console.log('🔍 Payment:', method, 'amount:', validAmount);
         });
       }
     });
     
+    console.log('🔍 Payment totals calculados:', totals);
     return totals;
   };
 
@@ -406,12 +411,15 @@ export default function ViewSalesPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('es-CO', {
+    // 🔥 Ya no transformamos zona horaria - la BD ya devuelve hora Colombia
+    const date = new Date(dateString);
+    return date.toLocaleString('es-CO', {
       year: 'numeric',
-      month: '2-digit',
+      month: '2-digit', 
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'UTC' // 🔥 Forzar UTC para no restar horas
     });
   };
 
