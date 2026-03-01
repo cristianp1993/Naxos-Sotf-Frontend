@@ -383,14 +383,14 @@ export default function SalesPage() {
     const flavorData = menuData?.sabores?.find((f) => f.product_id == productId);
     if (!flavorData) return null;
     
-    console.log('🔍 DEBUG - Flavor data completo para producto', productId, ':', JSON.stringify(flavorData, null, 2));
-    console.log('🔍 DEBUG - Buscando sabor:', flavorName);
+    //console.log('🔍 DEBUG - Flavor data completo para producto', productId, ':', JSON.stringify(flavorData, null, 2));
+    //console.log('🔍 DEBUG - Buscando sabor:', flavorName);
     
     // Buscar el sabor en el array de sabores_activos
     const flavorIndex = flavorData.sabores_activos?.indexOf(flavorName);
     const result = flavorIndex !== undefined && flavorIndex >= 0 ? flavorIndex + 1 : null; // +1 porque los IDs empiezan en 1
     
-    console.log('🔍 DEBUG - Flavor ID encontrado:', result);
+    //console.log('🔍 DEBUG - Flavor ID encontrado:', result);
     return result;
   };
 
@@ -420,9 +420,9 @@ export default function SalesPage() {
         ],
       };
 
-      console.log('🔍 DEBUG - Frontend enviando observation:', observation);
-      console.log('🔍 DEBUG - Payload observation:', payload.observation);
-      console.log('🔍 DEBUG - Payload con promociones procesadas:', JSON.stringify(payload, null, 2));
+      // console.log('🔍 DEBUG - Frontend enviando observation:', observation);
+      //console.log('🔍 DEBUG - Payload observation:', payload.observation);
+      //console.log('🔍 DEBUG - Payload con promociones procesadas:', JSON.stringify(payload, null, 2));
 
       await salesService.createFullSale(payload);
       toast.success('¡Venta registrada exitosamente! ');

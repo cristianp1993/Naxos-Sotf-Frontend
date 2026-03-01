@@ -94,12 +94,12 @@ export default function ViewSalesPage() {
         // 🔥 Si la respuesta principal ya incluye totales, usarlos directamente
         if (data && data.totals) {
           setBackendTotals({
-            grand_total: data.totals.grand_total || 0,
-            payment_methods: data.totals.payment_methods || {},
-            total_count: data.total || 0
+            grand_total: typeof data.totals.grand_total === 'number' ? data.totals.grand_total : 0,
+            payment_methods: typeof data.totals.payment_methods === 'object' ? data.totals.payment_methods : {},
+            total_count: typeof data.total === 'number' ? data.total : 0
           });
-          setTotalItems(data.total || 0);
-          setTotalPages(Math.ceil((data.total || 0) / itemsPerPage));
+          setTotalItems(typeof data.total === 'number' ? data.total : 0);
+          setTotalPages(Math.ceil((typeof data.total === 'number' ? data.total : 0) / itemsPerPage));
         } else {
           // Load totals separately for complete data
           try {
@@ -110,20 +110,24 @@ export default function ViewSalesPage() {
             
             // 🔥 Asegurarnos que backendTotals siempre tenga los datos correctos
             if (totalsData && totalsData.totals) {
-              setBackendTotals(totalsData.totals);
-              setTotalItems(totalsData.totals.total_count || 0);
-              setTotalPages(Math.ceil((totalsData.totals.total_count || 0) / itemsPerPage));
+              setBackendTotals({
+                grand_total: typeof totalsData.totals.grand_total === 'number' ? totalsData.totals.grand_total : 0,
+                payment_methods: typeof totalsData.totals.payment_methods === 'object' ? totalsData.totals.payment_methods : {},
+                total_count: typeof totalsData.totals.total_count === 'number' ? totalsData.totals.total_count : 0
+              });
+              setTotalItems(typeof totalsData.totals.total_count === 'number' ? totalsData.totals.total_count : 0);
+              setTotalPages(Math.ceil((typeof totalsData.totals.total_count === 'number' ? totalsData.totals.total_count : 0) / itemsPerPage));
             } else {
               // Si no hay totales, establecer valores por defecto
               setBackendTotals({ grand_total: 0, payment_methods: {}, total_count: 0 });
               setTotalItems(0);
-              setTotalPages(0);
+              setTotalPages(1);
             }
           } catch (totalsError) {
             // Si hay error cargando totales, establecer valores por defecto para evitar cálculos locales incorrectos
             setBackendTotals({ grand_total: 0, payment_methods: {}, total_count: 0 });
             setTotalItems(0);
-            setTotalPages(0);
+            setTotalPages(1);
           }
         }
       } else {
@@ -303,54 +307,56 @@ export default function ViewSalesPage() {
     loadSales(true);
   };
 
-  // Get paginated data
+  // 🔥 SOLUCIÓN DEFINITIVA: Calcular paginación de forma robusta
   const getPaginatedSales = () => {
-    // 🔥 CORRECCIÓN: Si hay filtros, usar los datos del backend (ya paginados)
+    // Siempre usar paginación del backend cuando hay filtros
     if (filterStartDate && filterEndDate) {
-      return sales; // Backend already paginated
+      return sales; // Backend ya paginó
     }
     
-    // Otherwise, use client-side pagination
-    const filteredSales = getFilteredSales();
+    // Paginación local solo para ventas sin filtros
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return filteredSales.slice(startIndex, endIndex);
+    return sales.slice(startIndex, endIndex);
   };
 
-  // Calculate pagination info
+  // 🔥 SOLUCIÓN DEFINITIVA: Calcular paginación de forma robusta
   const filteredSales = getFilteredSales();
-  // 🔥 CORRECCIÓN: Usar backend pagination SIEMPRE que haya filtros (incluso si es el día de hoy)
   const isUsingBackendPagination = filterStartDate && filterEndDate;
-  //console.log('🔍 Debug - Filtros:', { filterStartDate, filterEndDate, today });
-  //console.log('🔍 Debug - isUsingBackendPagination:', isUsingBackendPagination);
-  //console.log('🔍 Debug - backendTotals:', backendTotals);
-  //console.log('🔍 Debug - totalItems:', totalItems, 'totalPages:', totalPages);
   const displaySales = isUsingBackendPagination ? sales : getPaginatedSales();
-  const currentTotalItems = isUsingBackendPagination ? totalItems : filteredSales.length;
-  const currentTotalPages = isUsingBackendPagination ? totalPages : Math.ceil(filteredSales.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage + 1;
-  const endIndex = Math.min(currentPage * itemsPerPage, currentTotalItems);
+  
+  // 🔥 Calcular totales de forma segura
+  const currentTotalItems = isUsingBackendPagination ? 
+    (typeof totalItems === 'number' && totalItems >= 0 ? totalItems : 0) : 
+    sales.length;
+  
+  // 🔥 Calcular páginas de forma segura (sin generar páginas extra)
+  const currentTotalPages = currentTotalItems > 0 ? 
+    Math.ceil(currentTotalItems / itemsPerPage) : 1;
+  
+  // 🔥 Validar página actual para que no exceda el total
+  const validCurrentPage = Math.min(Math.max(1, currentPage), currentTotalPages);
+  const startIndex = (validCurrentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(validCurrentPage * itemsPerPage, currentTotalItems);
 
-  // Calculate totals - SIEMPRE usar backend totals cuando hay filtros
+  // 🔥 SOLUCIÓN DEFINITIVA: Calcular totales de forma robusta
   const getFilteredTotal = () => {
-    // 🔥 CUANDO HAY FILTROS, SIEMPRE USAR TOTALES DEL BACKEND
-    if (isUsingBackendPagination && backendTotals) {
-      return backendTotals.grand_total || 0;
+    // Siempre usar backend totals cuando hay filtros
+    if (isUsingBackendPagination && backendTotals && typeof backendTotals.grand_total === 'number') {
+      return backendTotals.grand_total;
     }
     
-    // Solo calcular localmente si no hay filtros (ventas de hoy)
-    return filteredSales.reduce((sum, sale) => {
+    // Fallback robusto para ventas sin filtros
+    return sales.reduce((sum, sale) => {
       const total = typeof sale.total === 'string' ? parseFloat(sale.total) : sale.total;
-      const validTotal = total || 0;
-      return sum + validTotal;
+      return sum + (typeof total === 'number' && !isNaN(total) ? total : 0);
     }, 0);
   };
 
-  // Calculate totals by payment method - SIEMPRE usar backend totals cuando hay filtros
+  // 🔥 SOLUCIÓN DEFINITIVA: Calcular totales por método de pago de forma robusta
   const getPaymentMethodTotals = () => {
-    // 🔥 CUANDO HAY FILTROS, SIEMPRE USAR TOTALES DEL BACKEND
+    // Siempre usar backend totals cuando hay filtros
     if (isUsingBackendPagination && backendTotals && backendTotals.payment_methods && typeof backendTotals.payment_methods === 'object') {
-      // 🔥 Mapear métodos de pago de BD a UI
       const mappedTotals: Record<string, number> = {};
       const paymentMapping: Record<string, string> = {
         'CASH': 'EFECTIVO',
@@ -362,13 +368,13 @@ export default function ViewSalesPage() {
       
       Object.entries(backendTotals.payment_methods).forEach(([method, amount]) => {
         const uiMethod = paymentMapping[method] || method;
-        mappedTotals[uiMethod] = amount || 0;
+        mappedTotals[uiMethod] = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
       });
       
       return mappedTotals;
     }
     
-    // Solo calcular localmente si no hay filtros (ventas de hoy)
+    // Fallback robusto para ventas sin filtros
     const totals: Record<string, number> = {};
     const paymentMapping: Record<string, string> = {
       'CASH': 'EFECTIVO',
@@ -376,14 +382,13 @@ export default function ViewSalesPage() {
       'TARJETA': 'TARJETA'
     };
     
-    filteredSales.forEach(sale => {
+    sales.forEach(sale => {
       if (sale.payments && Array.isArray(sale.payments)) {
         sale.payments.forEach(payment => {
           let method = payment.method || 'SIN METODO';
-          // 🔥 Mapear método de BD a UI
           method = paymentMapping[method] || method;
           const amount = typeof payment.amount === 'string' ? parseFloat(payment.amount) : payment.amount;
-          const validAmount = amount || 0;
+          const validAmount = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
           
           if (!totals[method]) {
             totals[method] = 0;
