@@ -1,11 +1,15 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { fetchMenu } from '@/services/api';
 import { salesService } from '@/services/salesService';
+import { loyaltyService } from '@/services/loyaltyService';
+import { AuthService } from '@/services/authService';
 import type { MenuData, Product, Variant } from '@/types/menu';
 import type { CreateFullSalePayload } from '@/services/salesService';
+import type { LoyaltySearchMember } from '@/types/loyalty';
 import { useToast } from '@/components/ui/toast';
+import LoyaltyCustomerSearch from '@/components/LoyaltyCustomerSearch';
 
 type CartItem = {
   productId: number;
@@ -20,6 +24,21 @@ type CartItem = {
   promoReference?: string | null;
 };
 
+type PaymentMethodKey = 'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA' | 'OTRO';
+
+type PaymentEntry = {
+  method: PaymentMethodKey;
+  amount: string; // string para el input, se convierte a number al enviar
+  reference?: string | null;
+};
+
+const PAYMENT_METHODS: { key: PaymentMethodKey; icon: string; label: string }[] = [
+  { key: 'EFECTIVO', icon: '💵', label: 'Efectivo' },
+  { key: 'TRANSFERENCIA', icon: '📱', label: 'Transferencia' },
+  { key: 'TARJETA', icon: '💳', label: 'Tarjeta' },
+  { key: 'OTRO', icon: '💰', label: 'Otro' },
+];
+
 export default function SalesPage() {
   const [menuData, setMenuData] = useState<MenuData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,12 +49,14 @@ export default function SalesPage() {
   const [selectedFlavor, setSelectedFlavor] = useState<string | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
   const [quantity, setQuantity] = useState<string>('1');
-  const [paymentMethod, setPaymentMethod] = useState<'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA' | 'OTRO'>('EFECTIVO');
+  const [payments, setPayments] = useState<PaymentEntry[]>([]);
   const [observation, setObservation] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [is2x1Promo, setIs2x1Promo] = useState<boolean>(false);
   const [promoCounter, setPromoCounter] = useState<number>(0);
   const [currentPromoReference, setCurrentPromoReference] = useState<string | null>(null);
+  const [loyaltyEnabled, setLoyaltyEnabled] = useState(false);
+  const [loyaltyMember, setLoyaltyMember] = useState<LoyaltySearchMember | null>(null);
   const toast = useToast();
 
   // Cargar menú
@@ -372,6 +393,33 @@ export default function SalesPage() {
     setActiveStep('payment');
   };
 
+  // ── Pagos divididos ──────────────────────────────────────────────
+  const totalPaid = useMemo(() =>
+    payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0),
+    [payments]
+  );
+
+  const remaining = useMemo(() => Math.round((total - totalPaid) * 100) / 100, [total, totalPaid]);
+
+  const paymentStatus: 'incomplete' | 'exact' | 'exceeded' = useMemo(() => {
+    if (Math.abs(remaining) < 1) return 'exact';
+    return remaining > 0 ? 'incomplete' : 'exceeded';
+  }, [remaining]);
+
+  const addPaymentMethod = useCallback((method: PaymentMethodKey) => {
+    const currentRemaining = total - payments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+    const prefill = payments.length === 0 ? total : Math.max(0, Math.round(currentRemaining));
+    setPayments(prev => [...prev, { method, amount: prefill > 0 ? String(prefill) : '', reference: null }]);
+  }, [payments, total]);
+
+  const updatePaymentAmount = useCallback((index: number, amount: string) => {
+    setPayments(prev => prev.map((p, i) => i === index ? { ...p, amount } : p));
+  }, []);
+
+  const removePayment = useCallback((index: number) => {
+    setPayments(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
   const goBackToSelection = () => {
     setActiveStep('select');
     setSubmitting(false);
@@ -395,42 +443,61 @@ export default function SalesPage() {
   };
 
   const handleSubmitSale = async () => {
-    if (cart.length === 0 || submitting) return;
+    if (cart.length === 0 || submitting || payments.length === 0 || paymentStatus !== 'exact') return;
 
     setSubmitting(true);
     try {
-      // Usar processedCart para enviar los precios correctos de 2x1
       const payload: CreateFullSalePayload = {
-        location_id: 1, // Por defecto location_id = 1
+        location_id: 1,
         observation: observation.trim() || null,
         items: processedCart.map((item) => ({
           variant_id: item.variantId,
-          flavor_name: item.flavor || null, // Enviar nombre en lugar de ID
+          flavor_name: item.flavor || null,
           quantity: item.quantity,
           unit_price: item.unitPrice,
           is_promo_2x1: item.isPromo2x1 || false,
           promo_reference: item.promoReference || null
         })),
-        payments: [
-          {
-            method: paymentMethod,
-            amount: total,
-            reference: paymentMethod === 'TRANSFERENCIA' ? 'Referencia pendiente' : null,
-          },
-        ],
+        payments: payments.map(p => ({
+          method: p.method,
+          amount: parseFloat(p.amount) || 0,
+          reference: p.method === 'TRANSFERENCIA' ? 'Referencia pendiente' : null,
+        })),
       };
 
-      // console.log('🔍 DEBUG - Frontend enviando observation:', observation);
-      //console.log('🔍 DEBUG - Payload observation:', payload.observation);
-      //console.log('🔍 DEBUG - Payload con promociones procesadas:', JSON.stringify(payload, null, 2));
+      const saleResult = await salesService.createFullSale(payload);
 
-      await salesService.createFullSale(payload);
-      toast.success('¡Venta registrada exitosamente! ');
+      // Acumular puntos si loyalty está activo y hay cliente seleccionado
+      if (loyaltyEnabled && loyaltyMember && total >= 1000) {
+        try {
+          const token = AuthService.getToken();
+          if (token) {
+            const loyaltyRes = await loyaltyService.addPoints({
+              member_id: loyaltyMember.id,
+              sale_amount: total,
+              reference_id: saleResult?.sale?.sale_id?.toString() || undefined,
+            }, token);
+            toast.success(`¡Venta registrada! ⭐ ${loyaltyRes.points_added} puntos acumulados para ${loyaltyMember.full_name}. Saldo: ${loyaltyRes.new_balance}`, 5000);
+          } else {
+            toast.success('¡Venta registrada exitosamente!');
+            toast.warning('No se pudieron acumular puntos: sesión no válida.');
+          }
+        } catch (loyaltyErr: any) {
+          toast.success('¡Venta registrada exitosamente!');
+          toast.warning(`Puntos no acumulados: ${loyaltyErr.message || 'Error desconocido'}`);
+        }
+      } else {
+        toast.success('¡Venta registrada exitosamente!');
+      }
+
       setCart([]);
       setObservation('');
+      setPayments([]);
       setActiveStep('select');
       setPromoCounter(0);
       setCurrentPromoReference(null);
+      setLoyaltyEnabled(false);
+      setLoyaltyMember(null);
     } catch (err: any) {
       console.error('❌ Error en venta:', err);
       toast.error(err.message || 'Error al registrar la venta');
@@ -730,41 +797,104 @@ export default function SalesPage() {
         )}
 
         {activeStep === 'payment' && (
-          <div className="space-y-6">
+          <div className="space-y-5">
             <button
               onClick={goBackToSelection}
-              className="flex items-center text-purple-300 hover:text-purple-100 font-bold mb-4"
+              className="flex items-center text-purple-300 hover:text-purple-100 font-bold mb-2"
             >
               ← Volver a selección
             </button>
 
-            {/* Método de pago */}
+            {/* Agregar método de pago */}
             <div>
-              <label className="block text-purple-200 font-bold mb-2">Método de pago</label>
-              <div className="grid grid-cols-2 gap-2">
-                {(['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'OTRO'] as const).map((method) => (
+              <label className="block text-purple-200 font-bold mb-2">
+                {payments.length === 0 ? 'Método de pago' : 'Agregar otro medio'}
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {PAYMENT_METHODS.map((m) => (
                   <button
-                    key={method}
-                    onClick={() => setPaymentMethod(method)}
-                    className={`p-3 rounded-xl font-bold transition-all flex flex-col items-center justify-center min-h-[60px] ${
-                      paymentMethod === method
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-2 border-green-300'
-                        : 'bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20'
-                    }`}
+                    key={m.key}
+                    onClick={() => addPaymentMethod(m.key)}
+                    className="p-2.5 rounded-xl font-bold transition-all flex flex-col items-center justify-center min-h-[56px] bg-white/10 text-purple-200 border border-white/20 hover:bg-white/20 active:scale-95"
                   >
-                    <span className="text-lg mb-1">
-                      {method === 'EFECTIVO' && '💵'}
-                      {method === 'TARJETA' && '💳'}
-                      {method === 'TRANSFERENCIA' && '📱'}
-                      {method === 'OTRO' && '💰'}
-                    </span>
-                    <span className="text-xs sm:text-sm leading-tight text-center break-words max-w-full">
-                      {method}
+                    <span className="text-lg mb-0.5">{m.icon}</span>
+                    <span className="text-[10px] sm:text-xs leading-tight text-center break-words max-w-full">
+                      {m.label}
                     </span>
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Lista de pagos agregados */}
+            {payments.length > 0 && (
+              <div className="space-y-2">
+                <label className="block text-purple-200 font-bold text-sm">Pagos</label>
+                {payments.map((p, idx) => {
+                  const meta = PAYMENT_METHODS.find(m => m.key === p.method)!;
+                  return (
+                    <div key={idx} className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 p-3">
+                      <span className="text-lg shrink-0">{meta.icon}</span>
+                      <span className="text-xs font-bold text-purple-200 w-[72px] shrink-0 truncate">{meta.label}</span>
+                      <div className="relative flex-1 min-w-0">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400 text-sm font-bold">$</span>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          value={p.amount}
+                          onChange={(e) => updatePaymentAmount(idx, e.target.value)}
+                          className="w-full pl-7 pr-3 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          placeholder="0"
+                        />
+                      </div>
+                      <button
+                        onClick={() => removePayment(idx)}
+                        className="p-2 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-400 hover:text-red-300 transition-colors shrink-0"
+                        title="Quitar"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Resumen de pagos */}
+            {payments.length > 0 && (
+              <div className="rounded-2xl border border-white/15 bg-white/5 p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-purple-300 font-medium">Total venta</span>
+                  <span className="text-white font-black">${total.toLocaleString('es-CO')}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-purple-300 font-medium">Pagado</span>
+                  <span className="text-white font-black">${totalPaid.toLocaleString('es-CO')}</span>
+                </div>
+                <div className="border-t border-white/10 pt-2 flex justify-between text-sm">
+                  {paymentStatus === 'exact' && (
+                    <>
+                      <span className="text-emerald-400 font-bold">✅ Pago completo</span>
+                      <span className="text-emerald-400 font-black">$0</span>
+                    </>
+                  )}
+                  {paymentStatus === 'incomplete' && (
+                    <>
+                      <span className="text-yellow-400 font-bold">Faltan</span>
+                      <span className="text-yellow-300 font-black">${remaining.toLocaleString('es-CO')}</span>
+                    </>
+                  )}
+                  {paymentStatus === 'exceeded' && (
+                    <>
+                      <span className="text-red-400 font-bold">Excede en</span>
+                      <span className="text-red-400 font-black">${Math.abs(remaining).toLocaleString('es-CO')}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Observación */}
             <div>
@@ -773,18 +903,55 @@ export default function SalesPage() {
                 value={observation}
                 onChange={(e) => setObservation(e.target.value)}
                 placeholder="Ej: Venta ya realizada, cliente especial, etc..."
-                rows={3}
+                rows={2}
                 className="w-full p-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
               />
+            </div>
+
+            {/* Toggle acumular puntos */}
+            <div className="rounded-2xl border border-white/15 bg-white/5 p-4 space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={loyaltyEnabled}
+                    onChange={(e) => {
+                      setLoyaltyEnabled(e.target.checked);
+                      if (!e.target.checked) setLoyaltyMember(null);
+                    }}
+                    className="sr-only"
+                  />
+                  <div className={`w-11 h-6 rounded-full transition-colors ${loyaltyEnabled ? 'bg-yellow-500' : 'bg-white/20'}`}>
+                    <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${loyaltyEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </div>
+                </div>
+                <span className="text-purple-200 font-bold text-sm">⭐ ¿Acumula puntos?</span>
+                {loyaltyEnabled && total >= 1000 && (
+                  <span className="ml-auto text-xs font-bold text-yellow-300 bg-yellow-500/15 px-2 py-1 rounded-lg">
+                    +{Math.floor(total / 1000)} pts
+                  </span>
+                )}
+              </label>
+
+              {loyaltyEnabled && (
+                <div className="pt-1">
+                  <LoyaltyCustomerSearch
+                    onSelect={(m) => setLoyaltyMember(m)}
+                    onClear={() => setLoyaltyMember(null)}
+                    selectedMember={loyaltyMember}
+                    compact
+                  />
+                </div>
+              )}
             </div>
 
             {/* Botón de confirmación */}
             <button
               onClick={handleSubmitSale}
-              disabled={submitting || cart.length === 0}
+              disabled={submitting || cart.length === 0 || payments.length === 0 || paymentStatus !== 'exact'}
               className={`w-full py-4 font-black rounded-xl transition-all ${
-                submitting
-                  ? 'bg-gray-500 cursor-not-allowed'
+                submitting || payments.length === 0 || paymentStatus !== 'exact'
+                  ? 'bg-gray-600/50 text-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600'
               }`}
             >

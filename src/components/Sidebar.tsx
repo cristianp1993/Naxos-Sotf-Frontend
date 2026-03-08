@@ -242,7 +242,7 @@ const menuItems: MenuItem[] = [
     path: '/admin/users',
     roles: ['ADMIN'],
     description: 'Gestión de usuarios'
-  }
+  },
 ];
 
 // ✅ Subitems del collapsable "Ventas"
@@ -262,6 +262,14 @@ const salesSubItems: MenuItem[] = [
     path: '/admin/sales/view',
     roles: ['ADMIN'],
     description: 'Ver ventas guardadas'
+  },
+  {
+    id: 'sales-redeem',
+    label: 'Redimir Puntos',
+    icon: SalesIcon,
+    path: '/admin/redeem',
+    roles: ['ADMIN', 'CASHIER'],
+    description: 'Redimir puntos de clientes'
   }
 ];
 
@@ -619,6 +627,7 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               </button>
             );
           })}
+
         </nav>
 
         {/* Logout Button */}

@@ -20,7 +20,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onRemove(toast.id);
-    }, toast.duration || 3000);
+    }, toast.duration || 1500);
 
     return () => clearTimeout(timer);
   }, [toast.id, toast.duration, onRemove]);
@@ -71,9 +71,9 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
         <p className="flex-1 font-medium">{toast.message}</p>
         <button
           onClick={() => onRemove(toast.id)}
-          className="ml-2 text-white/80 hover:text-white transition-colors"
+          className="ml-2 p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center"
         >
-          ×
+          ✕
         </button>
       </div>
     </div>
