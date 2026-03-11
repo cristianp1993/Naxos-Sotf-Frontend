@@ -124,19 +124,29 @@ export default function MenuPage() {
     return flavorData?.sabores_activos || [];
   };
 
+  const isEnvenenada = (name: string) =>
+    (name || '').toLowerCase().replace(/\s+/g, '') === 'envenenada';
+
+  const envenenadaProduct = useMemo(
+    () => menuData?.productos?.find((p) => isEnvenenada(p.name)) ?? null,
+    [menuData]
+  );
+
   const orderedProducts = useMemo(() => {
     if (!menuData?.productos) return [];
-    const priority = ['Granizados', 'Envenedada', 'Cuates', 'Cervezas'];
+    const priority = ['Granizados', 'Cuates', 'Cervezas'];
     const priorityLower = priority.map((p) => p.toLowerCase());
 
-    return [...menuData.productos].sort((a, b) => {
-      const aIdx = priorityLower.indexOf((a.name || '').toLowerCase());
-      const bIdx = priorityLower.indexOf((b.name || '').toLowerCase());
-      const aOrder = aIdx >= 0 ? aIdx : priority.length;
-      const bOrder = bIdx >= 0 ? bIdx : priority.length;
-      if (aOrder !== bOrder) return aOrder - bOrder;
-      return (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' });
-    });
+    return [...menuData.productos]
+      .filter((p) => !isEnvenenada(p.name))
+      .sort((a, b) => {
+        const aIdx = priorityLower.indexOf((a.name || '').toLowerCase());
+        const bIdx = priorityLower.indexOf((b.name || '').toLowerCase());
+        const aOrder = aIdx >= 0 ? aIdx : priority.length;
+        const bOrder = bIdx >= 0 ? bIdx : priority.length;
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        return (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' });
+      });
   }, [menuData]);
 
   const getCategoryIcon = (category: string) => {
@@ -297,6 +307,7 @@ export default function MenuPage() {
           const variants = getVariantsForProduct(product.product_id);
           const flavors = getFlavorsForProduct(product.product_id);
           const cat = product.categoria || 'Otros';
+          const isGranizados = (product.name || '').toLowerCase() === 'granizados';
 
           return (
             <section key={product.product_id} className="mb-10">
@@ -400,6 +411,71 @@ export default function MenuPage() {
                     * Los precios y disponibilidad pueden variar según temporada.
                   </p>
                 </article>
+
+                {isGranizados && envenenadaProduct && (() => {
+                  const envVariants = getVariantsForProduct(envenenadaProduct.product_id);
+                  const envFlavors = getFlavorsForProduct(envenenadaProduct.product_id);
+                  return (
+                    <div className="rounded-2xl border border-rose-400/30 bg-gradient-to-r from-rose-500/10 via-pink-500/10 to-purple-500/10 p-4 backdrop-blur-lg shadow-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="h-10 w-10 rounded-xl bg-rose-500/15 border border-rose-400/25 grid place-items-center text-lg">
+                          💉
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg sm:text-xl font-black text-rose-200 tracking-wide">
+                            {envenenadaProduct.name}
+                          </h3>
+                          {envenenadaProduct.description && (
+                            <p className="text-xs text-rose-300/80 mt-0.5">{envenenadaProduct.description}</p>
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-rose-300/70 bg-rose-500/15 border border-rose-400/20 rounded-full px-2 py-1">
+                          Adicional
+                        </span>
+                      </div>
+
+                      {envFlavors.length > 0 && (
+                        <div className="mb-3 flex flex-wrap gap-1.5">
+                          {envFlavors.map((flavor) => (
+                            <span
+                              key={flavor}
+                              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black text-rose-100 border border-rose-400/20 bg-rose-500/15 backdrop-blur-sm"
+                            >
+                              <span className="opacity-80">💉</span>
+                              <span className="tracking-wide">{flavor}</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {envVariants.length > 0 && (
+                        <div className="rounded-xl border border-rose-400/20 overflow-hidden">
+                          <div className="divide-y divide-rose-400/15">
+                            {envVariants.map((v) => {
+                              const hasPrice =
+                                v.precio_actual !== null &&
+                                v.precio_actual !== undefined &&
+                                !Number.isNaN(Number(v.precio_actual));
+                              return (
+                                <div
+                                  key={v.variant_id}
+                                  className="flex items-center justify-between px-3 py-2 bg-rose-500/5 hover:bg-rose-500/10 transition-colors"
+                                >
+                                  <span className="text-rose-100 font-bold text-sm">{v.variant_name}</span>
+                                  <div className="inline-flex items-center rounded-lg px-2.5 py-1 font-black border border-rose-400/25 bg-gradient-to-r from-rose-500/25 via-pink-500/20 to-purple-500/15 text-white shadow">
+                                    <span className="text-xs">
+                                      {hasPrice ? formatRD(Number(v.precio_actual)) : 'Consultar'}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </section>
           );
