@@ -124,34 +124,20 @@ export default function MenuPage() {
     return flavorData?.sabores_activos || [];
   };
 
-  const productsByCategory: Record<string, Product[]> = useMemo(() => {
-    if (!menuData?.productos) return {};
-    return menuData.productos.reduce((acc, p) => {
-      const key = p.categoria || 'Otros';
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(p);
-      return acc;
-    }, {} as Record<string, Product[]>);
-  }, [menuData]);
-
-  const orderedCategories = useMemo(() => {
-    const categories = Object.keys(productsByCategory);
-    const priority = ['Granizados', 'Envenenada', 'Cuates', 'Cervezas'];
-
+  const orderedProducts = useMemo(() => {
+    if (!menuData?.productos) return [];
+    const priority = ['Granizados', 'Envenedada', 'Cuates', 'Cervezas'];
     const priorityLower = priority.map((p) => p.toLowerCase());
-    const ordered: string[] = [];
 
-    for (const p of priority) {
-      const found = categories.find((c) => c.toLowerCase() === p.toLowerCase());
-      if (found) ordered.push(found);
-    }
-
-    const remaining = categories
-      .filter((c) => !priorityLower.includes(c.toLowerCase()))
-      .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
-
-    return [...ordered, ...remaining];
-  }, [productsByCategory]);
+    return [...menuData.productos].sort((a, b) => {
+      const aIdx = priorityLower.indexOf((a.name || '').toLowerCase());
+      const bIdx = priorityLower.indexOf((b.name || '').toLowerCase());
+      const aOrder = aIdx >= 0 ? aIdx : priority.length;
+      const bOrder = bIdx >= 0 ? bIdx : priority.length;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' });
+    });
+  }, [menuData]);
 
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, string> = {
@@ -307,119 +293,113 @@ export default function MenuPage() {
       )}
 
       <main className="mx-auto max-w-3xl px-4 py-6 pb-20 relative z-10">
-        {orderedCategories.map((category) => {
-          const products = productsByCategory[category] || [];
+        {orderedProducts.map((product) => {
+          const variants = getVariantsForProduct(product.product_id);
+          const flavors = getFlavorsForProduct(product.product_id);
+          const cat = product.categoria || 'Otros';
 
           return (
-            <section key={category} className="mb-10">
+            <section key={product.product_id} className="mb-10">
               <div className="mt-4 space-y-4">
-                {products.map((product) => {
-                  const variants = getVariantsForProduct(product.product_id);
-                  const flavors = getFlavorsForProduct(product.product_id);
-
-                  return (
-                    <article
-                      key={product.product_id}
-                      className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-lg shadow-xl"
-                    >
-                      <div className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-lg shadow-xl mb-4">
-                        <div className="flex items-start gap-4">
-                          <div className="h-12 w-12 rounded-2xl bg-white/10 border border-white/20 grid place-items-center text-2xl text-purple-400">
-                            {getCategoryIcon(category)}
-                          </div>
-                          <div className="flex-1">
-                            <h2 className="text-2xl sm:text-3xl font-black text-purple-100 tracking-wide">
-                              {category}
-                            </h2>
-                          </div>
-                        </div>
+                <article
+                  className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-lg shadow-xl"
+                >
+                  <div className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-lg shadow-xl mb-4">
+                    <div className="flex items-start gap-4">
+                      <div className="h-12 w-12 rounded-2xl bg-white/10 border border-white/20 grid place-items-center text-2xl text-purple-400">
+                        {getCategoryIcon(cat)}
                       </div>
+                      <div className="flex-1">
+                        <h2 className="text-2xl sm:text-3xl font-black text-purple-100 tracking-wide">
+                          {product.name}
+                        </h2>
+                      </div>
+                    </div>
+                  </div>
 
-                      <div className="flex items-start gap-3">
-                        <div className="h-10 w-10 rounded-2xl bg-white/10 border border-white/20 grid place-items-center text-purple-400">
-                          <span className="text-lg">🍹</span>
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-2xl bg-white/10 border border-white/20 grid place-items-center text-purple-400">
+                      <span className="text-lg">🍹</span>
+                    </div>
+
+                    <div className="flex-1">
+                      <h3 className="text-xl sm:text-2xl font-black text-purple-100">Sabores</h3>
+
+                      {flavors.length > 0 && (
+                        <div className="mt-5 -ml-12">
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {flavors.map((flavor) => (
+                              <span
+                                key={flavor}
+                                className={[
+                                  'inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-black',
+                                  'text-purple-50 border border-white/20',
+                                  'bg-gradient-to-r',
+                                  getChipGradient(cat),
+                                  'shadow-lg shadow-black/10',
+                                  'backdrop-blur-sm',
+                                  'ring-1 ring-white/10',
+                                  'transition-transform duration-200 hover:scale-[1.02]',
+                                ].join(' ')}
+                              >
+                                <span className="opacity-90">🥤</span>
+                                <span className="tracking-wide">{flavor}</span>
+                              </span>
+                            ))}
+                          </div>
                         </div>
+                      )}
+                    </div>
 
-                        <div className="flex-1">
-                          <h3 className="text-xl sm:text-2xl font-black text-purple-100">Sabores</h3>
+                  </div>
 
-                          {flavors.length > 0 && (
-                            <div className="mt-5 -ml-12">
-                              <div className="mt-2 flex flex-wrap gap-2">
-                                {flavors.map((flavor) => (
-                                  <span
-                                    key={flavor}
-                                    className={[
-                                      'inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-black',
-                                      'text-purple-50 border border-white/20',
-                                      'bg-gradient-to-r',
-                                      getChipGradient(category),
-                                      'shadow-lg shadow-black/10',
-                                      'backdrop-blur-sm',
-                                      'ring-1 ring-white/10',
-                                      'transition-transform duration-200 hover:scale-[1.02]',
-                                    ].join(' ')}
-                                  >
-                                    <span className="opacity-90">🥤</span>
-                                    <span className="tracking-wide">{flavor}</span>
-                                  </span>
-                                ))}
+                  <div className="mt-5 rounded-2xl border border-white/20 overflow-hidden">
+                    <div className="grid grid-cols-10 bg-white/10 px-3 py-3 text-[11px] font-black text-purple-200 tracking-wide uppercase">
+                      <div className="col-span-5">Tamaño</div>
+                      <div className="col-span-2 text-left">Oz</div>
+                      <div className="col-span-3 text-right">Precio</div>
+                    </div>
+
+                    <div className="divide-y divide-white/15">
+                      {variants.map((v) => {
+                        const hasPrice =
+                          v.precio_actual !== null &&
+                          v.precio_actual !== undefined &&
+                          !Number.isNaN(Number(v.precio_actual));
+
+                        return (
+                          <div
+                            key={v.variant_id}
+                            className="grid grid-cols-10 px-3 py-3 bg-white/5 hover:bg-white/10 transition-colors"
+                          >
+                            <div className="col-span-5">
+                              <div className="text-purple-100 font-black text-base">{v.variant_name}</div>
+                              <div className="text-xs text-purple-300 mt-0.5">
+                                🍬 {v.toppings ?? 0} topping{(v.toppings ?? 0) === 1 ? '' : 's'}
                               </div>
                             </div>
-                          )}
-                        </div>
 
-                      </div>
+                            <div className="col-span-2 text-left text-purple-200 font-bold">
+                              {v.ounces ?? '—'}
+                            </div>
 
-                      <div className="mt-5 rounded-2xl border border-white/20 overflow-hidden">
-                        <div className="grid grid-cols-10 bg-white/10 px-3 py-3 text-[11px] font-black text-purple-200 tracking-wide uppercase">
-                          <div className="col-span-5">Tamaño</div>
-                          <div className="col-span-2 text-left">Oz</div>
-                          <div className="col-span-3 text-right">Precio</div>
-                        </div>
-
-                        <div className="divide-y divide-white/15">
-                          {variants.map((v) => {
-                            const hasPrice =
-                              v.precio_actual !== null &&
-                              v.precio_actual !== undefined &&
-                              !Number.isNaN(Number(v.precio_actual));
-
-                            return (
-                              <div
-                                key={v.variant_id}
-                                className="grid grid-cols-10 px-3 py-3 bg-white/5 hover:bg-white/10 transition-colors"
-                              >
-                                <div className="col-span-5">
-                                  <div className="text-purple-100 font-black text-base">{v.variant_name}</div>
-                                  <div className="text-xs text-purple-300 mt-0.5">
-                                    🍬 {v.toppings ?? 0} topping{(v.toppings ?? 0) === 1 ? '' : 's'}
-                                  </div>
-                                </div>
-
-                                <div className="col-span-2 text-left text-purple-200 font-bold">
-                                  {v.ounces ?? '—'}
-                                </div>
-
-                                <div className="col-span-3 text-right">
-                                  <div className="inline-flex items-center justify-center min-w-[80px] sm:min-w-[100px] max-w-full rounded-xl px-2 py-2 sm:px-3 sm:py-2 font-black border border-white/20 bg-gradient-to-r from-purple-500/30 via-pink-500/25 to-yellow-500/20 text-white shadow-lg">
-                                    <span className="text-xs sm:text-sm leading-tight text-center">
-                                      {hasPrice ? formatRD(Number(v.precio_actual)) : 'Consultar'}
-                                    </span>
-                                  </div>
-                                </div>
+                            <div className="col-span-3 text-right">
+                              <div className="inline-flex items-center justify-center min-w-[80px] sm:min-w-[100px] max-w-full rounded-xl px-2 py-2 sm:px-3 sm:py-2 font-black border border-white/20 bg-gradient-to-r from-purple-500/30 via-pink-500/25 to-yellow-500/20 text-white shadow-lg">
+                                <span className="text-xs sm:text-sm leading-tight text-center">
+                                  {hasPrice ? formatRD(Number(v.precio_actual)) : 'Consultar'}
+                                </span>
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-                      <p className="mt-3 text-xs text-purple-300">
-                        * Los precios y disponibilidad pueden variar según temporada.
-                      </p>
-                    </article>
-                  );
-                })}
+                  <p className="mt-3 text-xs text-purple-300">
+                    * Los precios y disponibilidad pueden variar según temporada.
+                  </p>
+                </article>
               </div>
             </section>
           );
