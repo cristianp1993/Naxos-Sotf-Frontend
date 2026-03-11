@@ -136,16 +136,21 @@ export default function MenuPage() {
 
   const orderedCategories = useMemo(() => {
     const categories = Object.keys(productsByCategory);
-    const priority = ['Granizados', 'granizados', 'Granizado', 'granizado'];
+    const priority = ['Granizados', 'Envenenada', 'Cuates', 'Cervezas'];
 
-    const sorted = [
-      ...priority.filter((c) => categories.includes(c)),
-      ...categories
-        .filter((c) => !priority.includes(c))
-        .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' })),
-    ];
+    const priorityLower = priority.map((p) => p.toLowerCase());
+    const ordered: string[] = [];
 
-    return Array.from(new Set(sorted));
+    for (const p of priority) {
+      const found = categories.find((c) => c.toLowerCase() === p.toLowerCase());
+      if (found) ordered.push(found);
+    }
+
+    const remaining = categories
+      .filter((c) => !priorityLower.includes(c.toLowerCase()))
+      .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+    return [...ordered, ...remaining];
   }, [productsByCategory]);
 
   const getCategoryIcon = (category: string) => {
