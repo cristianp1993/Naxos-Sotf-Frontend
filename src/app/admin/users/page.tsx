@@ -203,8 +203,7 @@ export default function UsersPage() {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/Bogota'
+      minute: '2-digit'
     });
   };
 

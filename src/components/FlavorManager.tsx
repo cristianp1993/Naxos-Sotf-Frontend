@@ -68,7 +68,7 @@ export default function FlavorManager({ flavors, loading, onEdit, onDelete }: Fl
                       <div className="flex items-center gap-4 mt-1">
                         <span className="text-xs text-white/50">ID: {flavor.flavor_id}</span>
                         <span className="text-xs text-white/50">
-                          Creado: {new Date(flavor.createdAt).toLocaleDateString('es-ES', { timeZone: 'America/Bogota' })}
+                          Creado: {new Date(flavor.createdAt).toLocaleDateString('es-ES')}
                         </span>
                       </div>
                     </div>

@@ -151,8 +151,7 @@ export default function ProductsTable({ products, onEdit, onDelete, loading = fa
                     {product.createdAt ? new Date(product.createdAt).toLocaleDateString('es-ES', {
                       year: 'numeric',
                       month: 'short',
-                      day: 'numeric',
-                      timeZone: 'America/Bogota'
+                      day: 'numeric'
                     }) : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
