@@ -132,19 +132,22 @@ export default function MenuPage() {
     [menuData]
   );
 
+  const productPriority = (name: string): number => {
+    const n = (name || '').toLowerCase();
+    if (n.startsWith('granizado')) return 0;
+    if (n.startsWith('cuate')) return 1;
+    if (n.startsWith('cerveza')) return 2;
+    return 3;
+  };
+
   const orderedProducts = useMemo(() => {
     if (!menuData?.productos) return [];
-    const priority = ['Granizados', 'Cuates', 'Cervezas'];
-    const priorityLower = priority.map((p) => p.toLowerCase());
 
     return [...menuData.productos]
       .filter((p) => !isEnvenenada(p.name))
       .sort((a, b) => {
-        const aIdx = priorityLower.indexOf((a.name || '').toLowerCase());
-        const bIdx = priorityLower.indexOf((b.name || '').toLowerCase());
-        const aOrder = aIdx >= 0 ? aIdx : priority.length;
-        const bOrder = bIdx >= 0 ? bIdx : priority.length;
-        if (aOrder !== bOrder) return aOrder - bOrder;
+        const diff = productPriority(a.name) - productPriority(b.name);
+        if (diff !== 0) return diff;
         return (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' });
       });
   }, [menuData]);
@@ -307,7 +310,7 @@ export default function MenuPage() {
           const variants = getVariantsForProduct(product.product_id);
           const flavors = getFlavorsForProduct(product.product_id);
           const cat = product.categoria || 'Otros';
-          const isGranizados = (product.name || '').toLowerCase() === 'granizados';
+          const isGranizados = (product.name || '').toLowerCase().startsWith('granizado');
 
           return (
             <section key={product.product_id} className="mb-10">
