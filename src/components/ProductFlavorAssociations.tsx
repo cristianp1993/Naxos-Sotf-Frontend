@@ -149,14 +149,13 @@ function ModalShell({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-8 p-4">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl rounded-2xl border border-white/20 bg-slate-900/80 shadow-2xl">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-white/20 bg-slate-900/80 shadow-2xl max-h-[90vh] overflow-y-auto">
           <div className="p-5 border-b border-white/10 flex items-center justify-between">
             <div>
               <h3 className="text-white text-lg font-semibold">{title}</h3>
@@ -176,7 +175,6 @@ function ModalShell({
 
           <div className="p-5">{children}</div>
         </div>
-      </div>
     </div>
   );
 }
@@ -235,6 +233,28 @@ export default function ProductFlavorAssociations({ onAssociationChanged }: Prod
       toastTimers.current = {};
     };
   }, []);
+
+  // Prevenir scroll del body cuando el modal está abierto
+  useEffect(() => {
+    if (showCreateForm) {
+      const originalOverflow = document.body.style.overflow;
+      const originalPosition = document.body.style.position;
+      const scrollY = window.scrollY;
+      
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.position = originalPosition;
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [showCreateForm]);
 
   // -------------------- Loaders --------------------
   useEffect(() => {
