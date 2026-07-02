@@ -26,11 +26,9 @@ RUN pnpm build
 FROM node:24.11.0-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN corepack enable
 
-# Manifests para instalar solo prod deps
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --prod --frozen-lockfile
+COPY --from=deps /app/node_modules ./node_modules
 
 # Artefactos necesarios para ejecutar next start
 COPY --from=builder /app/public ./public
