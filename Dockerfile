@@ -39,4 +39,4 @@ ENV PORT=3001
 ENV HOSTNAME=0.0.0.0
 EXPOSE 3001
 
-CMD ["pnpm", "start"]
+CMD ["node_modules/.bin/next", "start", "-p", "3001"]
