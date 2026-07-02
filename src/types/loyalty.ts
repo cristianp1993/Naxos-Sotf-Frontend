@@ -78,6 +78,23 @@ export interface RedeemResponse {
   transaction_id: number;
 }
 
+export interface ListMembersResponse {
+  members: LoyaltySearchMember[];
+}
+
+export interface AssignPointsPayload {
+  member_id: number;
+  points_to_assign: number;
+  description?: string;
+}
+
+export interface AssignPointsResponse {
+  message: string;
+  points_added: number;
+  new_balance: number;
+  transaction_id: number;
+}
+
 export interface ApiError {
   error: string;
   message?: string;

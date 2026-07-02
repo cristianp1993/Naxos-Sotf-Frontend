@@ -9,6 +9,9 @@ import type {
   RedeemPayload,
   RedeemResponse,
   SearchMembersResponse,
+  ListMembersResponse,
+  AssignPointsPayload,
+  AssignPointsResponse,
 } from '@/types/loyalty';
 
 async function loyaltyFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -63,6 +66,21 @@ export const loyaltyService = {
   /** (Protegida) Redime un premio */
   redeem: (payload: RedeemPayload, token: string) =>
     loyaltyFetch<RedeemResponse>('/api/loyalty/redeem', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  /** (ADMIN) Lista todos los miembros ordenados por puntos DESC */
+  listMembers: (token: string, q?: string) =>
+    loyaltyFetch<ListMembersResponse>(
+      `/api/loyalty/members${q ? `?q=${encodeURIComponent(q)}` : ''}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    ),
+
+  /** (ADMIN) Asigna puntos directamente a un miembro */
+  assignPoints: (payload: AssignPointsPayload, token: string) =>
+    loyaltyFetch<AssignPointsResponse>('/api/loyalty/assign-points', {
       method: 'POST',
       body: JSON.stringify(payload),
       headers: { Authorization: `Bearer ${token}` },

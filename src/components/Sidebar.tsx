@@ -265,11 +265,11 @@ const salesSubItems: MenuItem[] = [
   },
   {
     id: 'sales-redeem',
-    label: 'Redimir Puntos',
+    label: 'Puntos de Lealtad',
     icon: SalesIcon,
     path: '/admin/redeem',
     roles: ['ADMIN', 'CASHIER'],
-    description: 'Redimir puntos de clientes'
+    description: 'Puntos de lealtad de clientes'
   }
 ];
 

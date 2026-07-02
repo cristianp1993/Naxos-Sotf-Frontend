@@ -523,37 +523,67 @@ export default function ProductFlavorAssociations({ onAssociationChanged }: Prod
         </div>
       )}
 
-      {/* Filters */}
-      <div className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por producto o sabor..."
-          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
-        />
+      {/* Search – mobile-first sticky bar */}
+      <div className="sticky top-0 z-10 mb-4 -mx-6 px-6 pt-2 pb-4 bg-slate-900/80 backdrop-blur-md border-b border-white/10">
+        <div className="relative">
+          <svg
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 pointer-events-none"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por producto o sabor..."
+            className="w-full pl-12 pr-12 py-3.5 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500 text-base"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
+              aria-label="Limpiar búsqueda"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
 
-        <select
-          value={filterProductId}
-          onChange={(e) => setFilterProductId(e.target.value)}
-          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-        >
-          <option value="" className="bg-slate-800">
-            Todos los productos
-          </option>
-          {products.map((p) => (
-            <option key={p.product_id} value={p.product_id} className="bg-slate-800">
-              {p.name}
-            </option>
-          ))}
-        </select>
+        {/* Secondary filters row */}
+        <div className="flex gap-2 mt-3">
+          <select
+            value={filterProductId}
+            onChange={(e) => setFilterProductId(e.target.value)}
+            className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="" className="bg-slate-800">Todos los productos</option>
+            {products.map((p) => (
+              <option key={p.product_id} value={p.product_id} className="bg-slate-800">{p.name}</option>
+            ))}
+          </select>
 
-        <button
-          onClick={refreshAssociationsOnly}
-          disabled={loading}
-          className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all duration-200 disabled:opacity-50"
-        >
-          {loading ? 'Actualizando...' : 'Actualizar'}
-        </button>
+          <button
+            onClick={refreshAssociationsOnly}
+            disabled={loading}
+            className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white/70 text-sm rounded-xl transition-all duration-200 disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <svg className={clsx('w-4 h-4', loading && 'animate-spin')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {loading ? '' : 'Sync'}
+          </button>
+        </div>
+
+        {/* Match summary when searching */}
+        {(search || filterProductId) && !booting && (
+          <p className="mt-2 text-xs text-white/50">
+            {filtered.length === 0
+              ? 'Sin resultados'
+              : `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''} — ${active.length} activa${active.length !== 1 ? 's' : ''}, ${inactive.length} inactiva${inactive.length !== 1 ? 's' : ''}`}
+          </p>
+        )}
       </div>
 
       {/* Empty / Loading */}
@@ -577,164 +607,228 @@ export default function ProductFlavorAssociations({ onAssociationChanged }: Prod
         <div className="space-y-8">
           {/* Active */}
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <span className="w-3 h-3 bg-green-500 rounded-full" />
-                Activas ({active.length})
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-green-500 rounded-full" />
+                Activas
+                <span className={clsx(
+                  'text-xs font-normal px-2 py-0.5 rounded-full border',
+                  search || filterProductId
+                    ? 'bg-green-500/20 text-green-300 border-green-500/30'
+                    : 'bg-white/10 text-white/50 border-white/10'
+                )}>
+                  {active.length}
+                </span>
               </h3>
-              <span className="text-white/50 text-sm">Mostrando {filtered.length} (filtro aplicado)</span>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-white/10">
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left">
-                  <thead className="bg-white/5">
-                    <tr className="text-white/70 text-sm">
-                      <th className="px-4 py-3 font-semibold">Producto</th>
-                      <th className="px-4 py-3 font-semibold">Sabor</th>
-                      <th className="px-4 py-3 font-semibold">Estado</th>
-                      <th className="px-4 py-3 font-semibold text-right">Acciones</th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-white/10">
-                    {active.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-4 py-6 text-center text-white/50">
-                          No hay asociaciones activas con los filtros actuales.
-                        </td>
-                      </tr>
-                    ) : (
-                      active.map((a) => (
-                        <tr key={a.key} className="hover:bg-white/[0.04]">
-                          <td className="px-4 py-3">
-                            <div className="text-white font-medium">{a.product.name}</div>
-                            <div className="text-white/40 text-xs">ID: {a.product_id}</div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="text-white font-medium">{a.flavor.name}</div>
-                            <div className="text-white/40 text-xs">ID: {a.flavor_id}</div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <StatusPill active={a.is_active} />
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                disabled={loading}
-                                onClick={() => toggleStatus(a, false)}
-                                className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm disabled:opacity-50"
-                                title="Desactivar"
-                              >
-                                Desactivar
-                              </button>
-
-                              <button
-                                disabled={loading}
-                                onClick={() => setConfirmDelete({ isOpen: true, association: a })}
-                                className="p-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/25 disabled:opacity-50"
-                                title="Eliminar"
-                                aria-label="Eliminar"
-                              >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3-3h4a1 1 0 011 1v2H9V5a1 1 0 011-1z"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+            {active.length === 0 ? (
+              <div className="py-6 text-center text-white/50 border border-dashed border-white/10 rounded-2xl text-sm">
+                No hay asociaciones activas{(search || filterProductId) ? ' con los filtros actuales' : ''}.
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Mobile cards */}
+                <div className="flex flex-col gap-3 md:hidden">
+                  {active.map((a) => (
+                    <div key={a.key} className="bg-green-500/5 border border-green-500/20 rounded-2xl p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-semibold truncate">{a.product.name}</p>
+                          <p className="text-green-300 text-sm truncate mt-0.5">{a.flavor.name}</p>
+                        </div>
+                        <StatusPill active={a.is_active} />
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          disabled={loading}
+                          onClick={() => toggleStatus(a, false)}
+                          className="flex-1 py-2 rounded-xl bg-yellow-500/15 hover:bg-yellow-500/25 text-yellow-200 border border-yellow-500/25 text-sm font-medium disabled:opacity-50 transition-colors"
+                        >
+                          Desactivar
+                        </button>
+                        <button
+                          disabled={loading}
+                          onClick={() => setConfirmDelete({ isOpen: true, association: a })}
+                          className="p-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/25 disabled:opacity-50 transition-colors"
+                          aria-label="Eliminar"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3-3h4a1 1 0 011 1v2H9V5a1 1 0 011-1z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-hidden rounded-2xl border border-white/10">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-left">
+                      <thead className="bg-white/5">
+                        <tr className="text-white/70 text-sm">
+                          <th className="px-4 py-3 font-semibold">Producto</th>
+                          <th className="px-4 py-3 font-semibold">Sabor</th>
+                          <th className="px-4 py-3 font-semibold">Estado</th>
+                          <th className="px-4 py-3 font-semibold text-right">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/10">
+                        {active.map((a) => (
+                          <tr key={a.key} className="hover:bg-white/[0.04]">
+                            <td className="px-4 py-3">
+                              <div className="text-white font-medium">{a.product.name}</div>
+                              <div className="text-white/40 text-xs">ID: {a.product_id}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="text-white font-medium">{a.flavor.name}</div>
+                              <div className="text-white/40 text-xs">ID: {a.flavor_id}</div>
+                            </td>
+                            <td className="px-4 py-3"><StatusPill active={a.is_active} /></td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  disabled={loading}
+                                  onClick={() => toggleStatus(a, false)}
+                                  className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm disabled:opacity-50"
+                                  title="Desactivar"
+                                >
+                                  Desactivar
+                                </button>
+                                <button
+                                  disabled={loading}
+                                  onClick={() => setConfirmDelete({ isOpen: true, association: a })}
+                                  className="p-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/25 disabled:opacity-50"
+                                  title="Eliminar" aria-label="Eliminar"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3-3h4a1 1 0 011 1v2H9V5a1 1 0 011-1z" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
           </section>
 
           {/* Inactive */}
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <span className="w-3 h-3 bg-yellow-400 rounded-full" />
-                Inactivas ({inactive.length})
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-yellow-400 rounded-full" />
+                Inactivas
+                <span className={clsx(
+                  'text-xs font-normal px-2 py-0.5 rounded-full border',
+                  search || filterProductId
+                    ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+                    : 'bg-white/10 text-white/50 border-white/10'
+                )}>
+                  {inactive.length}
+                </span>
               </h3>
-              
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-white/10">
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left">
-                  <thead className="bg-white/5">
-                    <tr className="text-white/70 text-sm">
-                      <th className="px-4 py-3 font-semibold">Producto</th>
-                      <th className="px-4 py-3 font-semibold">Sabor</th>
-                      <th className="px-4 py-3 font-semibold">Estado</th>
-                      <th className="px-4 py-3 font-semibold text-right">Acciones</th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-white/10">
-                    {inactive.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-4 py-6 text-center text-white/50">
-                          No hay asociaciones inactivas con los filtros actuales.
-                        </td>
-                      </tr>
-                    ) : (
-                      inactive.map((a) => (
-                        <tr key={a.key} className="hover:bg-white/[0.04]">
-                          <td className="px-4 py-3">
-                            <div className="text-white font-medium">{a.product.name}</div>
-                            <div className="text-white/40 text-xs">ID: {a.product_id}</div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="text-white font-medium">{a.flavor.name}</div>
-                            <div className="text-white/40 text-xs">ID: {a.flavor_id}</div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <StatusPill active={a.is_active} />
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                disabled={loading}
-                                onClick={() => toggleStatus(a, true)}
-                                className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm disabled:opacity-50"
-                                title="Activar"
-                              >
-                                Activar
-                              </button>
-
-                              <button
-                                disabled={loading}
-                                onClick={() => setConfirmDelete({ isOpen: true, association: a })}
-                                className="p-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/25 disabled:opacity-50"
-                                title="Eliminar"
-                                aria-label="Eliminar"
-                              >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3-3h4a1 1 0 011 1v2H9V5a1 1 0 011-1z"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+            {inactive.length === 0 ? (
+              <div className="py-6 text-center text-white/50 border border-dashed border-white/10 rounded-2xl text-sm">
+                No hay asociaciones inactivas{(search || filterProductId) ? ' con los filtros actuales' : ''}.
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Mobile cards */}
+                <div className="flex flex-col gap-3 md:hidden">
+                  {inactive.map((a) => (
+                    <div key={a.key} className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-semibold truncate">{a.product.name}</p>
+                          <p className="text-yellow-300 text-sm truncate mt-0.5">{a.flavor.name}</p>
+                        </div>
+                        <StatusPill active={a.is_active} />
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          disabled={loading}
+                          onClick={() => toggleStatus(a, true)}
+                          className="flex-1 py-2 rounded-xl bg-green-500/15 hover:bg-green-500/25 text-green-200 border border-green-500/25 text-sm font-medium disabled:opacity-50 transition-colors"
+                        >
+                          Activar
+                        </button>
+                        <button
+                          disabled={loading}
+                          onClick={() => setConfirmDelete({ isOpen: true, association: a })}
+                          className="p-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/25 disabled:opacity-50 transition-colors"
+                          aria-label="Eliminar"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3-3h4a1 1 0 011 1v2H9V5a1 1 0 011-1z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-hidden rounded-2xl border border-white/10">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-left">
+                      <thead className="bg-white/5">
+                        <tr className="text-white/70 text-sm">
+                          <th className="px-4 py-3 font-semibold">Producto</th>
+                          <th className="px-4 py-3 font-semibold">Sabor</th>
+                          <th className="px-4 py-3 font-semibold">Estado</th>
+                          <th className="px-4 py-3 font-semibold text-right">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/10">
+                        {inactive.map((a) => (
+                          <tr key={a.key} className="hover:bg-white/[0.04]">
+                            <td className="px-4 py-3">
+                              <div className="text-white font-medium">{a.product.name}</div>
+                              <div className="text-white/40 text-xs">ID: {a.product_id}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="text-white font-medium">{a.flavor.name}</div>
+                              <div className="text-white/40 text-xs">ID: {a.flavor_id}</div>
+                            </td>
+                            <td className="px-4 py-3"><StatusPill active={a.is_active} /></td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  disabled={loading}
+                                  onClick={() => toggleStatus(a, true)}
+                                  className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm disabled:opacity-50"
+                                  title="Activar"
+                                >
+                                  Activar
+                                </button>
+                                <button
+                                  disabled={loading}
+                                  onClick={() => setConfirmDelete({ isOpen: true, association: a })}
+                                  className="p-2 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-red-200 border border-red-500/25 disabled:opacity-50"
+                                  title="Eliminar" aria-label="Eliminar"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m3-3h4a1 1 0 011 1v2H9V5a1 1 0 011-1z" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
           </section>
         </div>
       )}
