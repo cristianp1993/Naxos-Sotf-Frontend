@@ -83,6 +83,8 @@ export default function MenuPage() {
 
   useEffect(() => {
     let raf = 0;
+    let lastScrollY = 0;
+    let ticking = false;
 
     const update = () => {
       const el = sliderRef.current;
@@ -96,11 +98,24 @@ export default function MenuPage() {
       const scale = 1.01;
 
       setParallax({ y, scale });
+      ticking = false;
     };
 
     const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(update);
+      const currentScrollY = window.scrollY;
+      
+      // Only update if scroll position changed significantly
+      if (Math.abs(currentScrollY - lastScrollY) < 2) {
+        return;
+      }
+      
+      lastScrollY = currentScrollY;
+      
+      if (!ticking) {
+        ticking = true;
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(update);
+      }
     };
 
     update();
@@ -126,6 +141,9 @@ export default function MenuPage() {
 
   const isEnvenenada = (name: string) =>
     (name || '').toLowerCase().replace(/\s+/g, '') === 'envenenada';
+
+  const isVaperCategory = (category: string) =>
+    ['vaper', 'vapers'].includes((category || '').toLowerCase());
 
   const envenenadaProduct = useMemo(
     () => menuData?.productos?.find((p) => isEnvenenada(p.name)) ?? null,
@@ -161,6 +179,9 @@ export default function MenuPage() {
       Jugos: '🧃',
       Batidos: '🥤',
       Bebidas: '🍹',
+      Vaper: '💨',
+      vaper: '💨',
+      vapers: '💨',
       Otros: '✨',
       default: '🍹',
     };
@@ -176,6 +197,9 @@ export default function MenuPage() {
       Jugos: 'from-emerald-500/26 via-lime-500/20 to-teal-500/22',
       Batidos: 'from-pink-500/28 via-fuchsia-500/20 to-violet-500/22',
       Bebidas: 'from-indigo-500/28 via-violet-500/20 to-fuchsia-500/22',
+      Vaper: 'from-cyan-500/30 via-blue-500/22 to-indigo-500/22',
+      vaper: 'from-cyan-500/30 via-blue-500/22 to-indigo-500/22',
+      vapers: 'from-cyan-500/30 via-blue-500/22 to-indigo-500/22',
       Otros: 'from-slate-400/20 via-gray-400/16 to-zinc-400/16',
       default: 'from-violet-500/35 via-fuchsia-500/25 to-amber-400/20',
     };
@@ -218,18 +242,18 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-        <div className="absolute top-20 left-20 text-purple-400 opacity-30 animate-float">🍭</div>
-        <div className="absolute top-40 right-32 text-yellow-400 opacity-40 animate-float animation-delay-1000">🍬</div>
-        <div className="absolute bottom-32 left-16 text-pink-400 opacity-35 animate-float animation-delay-2000">🧁</div>
-        <div className="absolute top-60 right-20 text-blue-400 opacity-30 animate-float animation-delay-3000">🍓</div>
-        <div className="absolute bottom-20 left-1/3 text-purple-300 opacity-25 animate-float animation-delay-2500">🍧</div>
+      <div className="absolute inset-0 pointer-events-none will-change-transform">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob will-change-transform"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000 will-change-transform"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000 will-change-transform"></div>
+        <div className="absolute top-20 left-20 text-purple-400 opacity-30 animate-float will-change-transform">🍭</div>
+        <div className="absolute top-40 right-32 text-yellow-400 opacity-40 animate-float animation-delay-1000 will-change-transform">🍬</div>
+        <div className="absolute bottom-32 left-16 text-pink-400 opacity-35 animate-float animation-delay-2000 will-change-transform">🧁</div>
+        <div className="absolute top-60 right-20 text-blue-400 opacity-30 animate-float animation-delay-3000 will-change-transform">🍓</div>
+        <div className="absolute bottom-20 left-1/3 text-purple-300 opacity-25 animate-float animation-delay-2500 will-change-transform">🍧</div>
       </div>
 
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/10 border-b border-white/20">
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/10 border-b border-white/20 will-change-transform">
         <div className="mx-auto max-w-3xl px-4 py-4">
           <div className="rounded-3xl border border-white/20 bg-white/10 px-4 py-4 shadow-xl">
             <div className="text-center">
@@ -244,18 +268,17 @@ export default function MenuPage() {
 
       {sliderImages.length > 0 && (
         <section ref={sliderRef} className="mx-auto max-w-3xl px-4 pt-4 relative z-10">
-          <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-lg shadow-xl overflow-hidden">
+          <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-md shadow-xl overflow-hidden will-change-transform">
             <div className="relative w-full aspect-[16/10] sm:aspect-[16/8]">
               <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-950/70 via-purple-950/35 to-slate-950/70" />
-                <div className="absolute -inset-10 bg-gradient-to-r from-purple-500/18 via-pink-500/12 to-yellow-500/14 blur-2xl opacity-80" />
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-950/60 via-purple-950/30 to-slate-950/60" />
               </div>
 
               <img
                 key={sliderImages[activeSlide]}
                 src={sliderImages[activeSlide]}
                 alt={`NAXOS slide ${activeSlide + 1}`}
-                className="absolute inset-0 h-full w-full object-contain slider-hero"
+                className="absolute inset-0 h-full w-full object-contain slider-hero will-change-transform"
                 style={{
                   transform: `translateY(${parallax.y}px) scale(${parallax.scale}) translateZ(0)`,
                 }}
@@ -265,7 +288,7 @@ export default function MenuPage() {
               <div className="absolute inset-0 slider-vignette pointer-events-none" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/35 via-slate-900/10 to-transparent" />
 
-              <div className="absolute left-4 top-4 rounded-2xl border border-white/20 bg-white/10 px-3 py-2 backdrop-blur-xl shadow-lg">
+              <div className="absolute left-4 top-4 rounded-2xl border border-white/20 bg-white/10 px-3 py-2 backdrop-blur-md shadow-lg">
                 <p className="text-purple-100 text-xs font-black tracking-wide">✨ Momentos NAXOS</p>
               </div>
 
@@ -288,7 +311,7 @@ export default function MenuPage() {
                 type="button"
                 aria-label="Anterior"
                 onClick={() => setActiveSlide((s) => (s - 1 + sliderImages.length) % sliderImages.length)}
-                className="absolute left-3 top-1/2 -translate-y-1/2 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl shadow-lg px-3 py-2 text-purple-100 font-black hover:bg-white/15 transition-colors"
+                className="absolute left-3 top-1/2 -translate-y-1/2 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md shadow-lg px-3 py-2 text-purple-100 font-black hover:bg-white/15 transition-colors"
               >
                 ‹
               </button>
@@ -296,7 +319,7 @@ export default function MenuPage() {
                 type="button"
                 aria-label="Siguiente"
                 onClick={() => setActiveSlide((s) => (s + 1) % sliderImages.length)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl shadow-lg px-3 py-2 text-purple-100 font-black hover:bg-white/15 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md shadow-lg px-3 py-2 text-purple-100 font-black hover:bg-white/15 transition-colors"
               >
                 ›
               </button>
@@ -316,9 +339,9 @@ export default function MenuPage() {
             <section key={product.product_id} className="mb-10">
               <div className="mt-4 space-y-4">
                 <article
-                  className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-lg shadow-xl"
+                  className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-md shadow-xl"
                 >
-                  <div className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-lg shadow-xl mb-4">
+                  <div className="rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-md shadow-xl mb-4">
                     <div className="flex items-start gap-4">
                       <div className="h-12 w-12 rounded-2xl bg-white/10 border border-white/20 grid place-items-center text-2xl text-purple-400">
                         {getCategoryIcon(cat)}
@@ -370,7 +393,7 @@ export default function MenuPage() {
                   <div className="mt-5 rounded-2xl border border-white/20 overflow-hidden">
                     <div className="grid grid-cols-10 bg-white/10 px-3 py-3 text-[11px] font-black text-purple-200 tracking-wide uppercase">
                       <div className="col-span-5">Tamaño</div>
-                      <div className="col-span-2 text-left">Oz</div>
+                      <div className="col-span-2 text-left">{isVaperCategory(cat) ? 'Puffs' : 'Oz'}</div>
                       <div className="col-span-3 text-right">Precio</div>
                     </div>
 
@@ -394,7 +417,7 @@ export default function MenuPage() {
                             </div>
 
                             <div className="col-span-2 text-left text-purple-200 font-bold">
-                              {v.ounces ?? '—'}
+                              {isVaperCategory(cat) ? (v.ounces ?? '—') : (v.ounces ?? '—')}
                             </div>
 
                             <div className="col-span-3 text-right">
@@ -419,7 +442,7 @@ export default function MenuPage() {
                   const envVariants = getVariantsForProduct(envenenadaProduct.product_id);
                   const envFlavors = getFlavorsForProduct(envenenadaProduct.product_id);
                   return (
-                    <div className="rounded-2xl border border-rose-400/30 bg-gradient-to-r from-rose-500/10 via-pink-500/10 to-purple-500/10 p-4 backdrop-blur-lg shadow-lg">
+                    <div className="rounded-2xl border border-rose-400/30 bg-gradient-to-r from-rose-500/10 via-pink-500/10 to-purple-500/10 p-4 backdrop-blur-md shadow-lg">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="h-10 w-10 rounded-xl bg-rose-500/15 border border-rose-400/25 grid place-items-center text-lg">
                           💉
@@ -485,7 +508,7 @@ export default function MenuPage() {
         })}
       </main>
 
-      <footer className="border-t border-white/20 bg-white/10 backdrop-blur-xl relative z-10">
+      <footer className="border-t border-white/20 bg-white/10 backdrop-blur-md relative z-10">
         <div className="mx-auto max-w-3xl px-2 py-8 text-center">
           <div className="inline-block rounded-2xl overflow-hidden shadow-lg bg-white/5 p-2 mb-1">
             <img
@@ -622,19 +645,17 @@ export default function MenuPage() {
           backface-visibility: hidden;
           transform-style: preserve-3d;
           image-rendering: auto;
-          filter: contrast(1.06) saturate(1.08);
+          filter: contrast(1.03) saturate(1.05);
         }
 
         .slider-vignette {
           background: radial-gradient(
             ellipse at center,
-            rgba(0, 0, 0, 0) 55%,
-            rgba(0, 0, 0, 0.35) 80%,
-            rgba(0, 0, 0, 0.55) 100%
+            rgba(0, 0, 0, 0) 50%,
+            rgba(0, 0, 0, 0.30) 75%,
+            rgba(0, 0, 0, 0.50) 100%
           );
-          -webkit-mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 70%, rgba(0, 0, 0, 0) 100%);
-          mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 70%, rgba(0, 0, 0, 0) 100%);
-          opacity: 0.95;
+          opacity: 0.90;
         }
       `}</style>
     </div>
