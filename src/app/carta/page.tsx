@@ -82,6 +82,12 @@ export default function MenuPage() {
   }, [sliderImages.length]);
 
   useEffect(() => {
+    const isTouchDevice = () =>
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
+      navigator.maxTouchPoints > 0;
+
+    if (isTouchDevice()) return;
+
     let raf = 0;
     let lastScrollY = 0;
     let ticking = false;
@@ -94,7 +100,7 @@ export default function MenuPage() {
       const vh = window.innerHeight || 0;
 
       const center = (rect.top + rect.height / 2 - vh / 2) / (vh / 2);
-      const y = Math.round(center * 12);
+      const y = Math.round(center * 4);
       const scale = 1.01;
 
       setParallax({ y, scale });
@@ -103,14 +109,11 @@ export default function MenuPage() {
 
     const onScroll = () => {
       const currentScrollY = window.scrollY;
-      
-      // Only update if scroll position changed significantly
-      if (Math.abs(currentScrollY - lastScrollY) < 2) {
-        return;
-      }
-      
+
+      if (Math.abs(currentScrollY - lastScrollY) < 2) return;
+
       lastScrollY = currentScrollY;
-      
+
       if (!ticking) {
         ticking = true;
         cancelAnimationFrame(raf);
@@ -243,14 +246,14 @@ export default function MenuPage() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="absolute inset-0 pointer-events-none will-change-transform">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob will-change-transform"></div>
-        <div className="absolute top-40 right-10 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000 will-change-transform"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000 will-change-transform"></div>
-        <div className="absolute top-20 left-20 text-purple-400 opacity-30 animate-float will-change-transform">🍭</div>
-        <div className="absolute top-40 right-32 text-yellow-400 opacity-40 animate-float animation-delay-1000 will-change-transform">🍬</div>
-        <div className="absolute bottom-32 left-16 text-pink-400 opacity-35 animate-float animation-delay-2000 will-change-transform">🧁</div>
-        <div className="absolute top-60 right-20 text-blue-400 opacity-30 animate-float animation-delay-3000 will-change-transform">🍓</div>
-        <div className="absolute bottom-20 left-1/3 text-purple-300 opacity-25 animate-float animation-delay-2500 will-change-transform">🍧</div>
+        <div className="hidden sm:block absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob will-change-transform"></div>
+        <div className="hidden sm:block absolute top-40 right-10 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000 will-change-transform"></div>
+        <div className="hidden sm:block absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000 will-change-transform"></div>
+        <div className="hidden sm:block absolute top-20 left-20 text-purple-400 opacity-30 animate-float will-change-transform">🍭</div>
+        <div className="hidden sm:block absolute top-40 right-32 text-yellow-400 opacity-40 animate-float animation-delay-1000 will-change-transform">🍬</div>
+        <div className="hidden sm:block absolute bottom-32 left-16 text-pink-400 opacity-35 animate-float animation-delay-2000 will-change-transform">🧁</div>
+        <div className="hidden sm:block absolute top-60 right-20 text-blue-400 opacity-30 animate-float animation-delay-3000 will-change-transform">🍓</div>
+        <div className="hidden sm:block absolute bottom-20 left-1/3 text-purple-300 opacity-25 animate-float animation-delay-2500 will-change-transform">🍧</div>
       </div>
 
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/10 border-b border-white/20 will-change-transform">
@@ -258,9 +261,20 @@ export default function MenuPage() {
           <div className="rounded-3xl border border-white/20 bg-white/10 px-4 py-4 shadow-xl">
             <div className="text-center">
               <h1 className="text-5xl sm:text-6xl font-black tracking-[0.18em] neon-title">NAXOS</h1>
-              <p className="mt-2 text-purple-200 text-sm sm:text-base font-semibold">
-                Granizados • bebidas frías • sabores únicos ✨
-              </p>
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black tracking-wide border border-violet-400/30 bg-gradient-to-r from-violet-500/25 via-fuchsia-500/20 to-violet-500/15 text-violet-200 shadow-sm shadow-violet-500/10">
+                  🍧 Granizados
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black tracking-wide border border-amber-400/30 bg-gradient-to-r from-amber-500/25 via-orange-500/20 to-amber-500/15 text-amber-200 shadow-sm shadow-amber-500/10">
+                  🍺 Cervezas
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black tracking-wide border border-pink-400/30 bg-gradient-to-r from-pink-500/25 via-rose-500/20 to-pink-500/15 text-pink-200 shadow-sm shadow-pink-500/10">
+                  🥤 Cuates
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-black tracking-wide border border-cyan-400/30 bg-gradient-to-r from-cyan-500/25 via-blue-500/20 to-cyan-500/15 text-cyan-200 shadow-sm shadow-cyan-500/10">
+                  💨 Vapers
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -271,7 +285,7 @@ export default function MenuPage() {
           <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-md shadow-xl overflow-hidden will-change-transform">
             <div className="relative w-full aspect-[16/10] sm:aspect-[16/8]">
               <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-950/60 via-purple-950/30 to-slate-950/60" />
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-950/20 via-purple-950/10 to-slate-950/20" />
               </div>
 
               <img
