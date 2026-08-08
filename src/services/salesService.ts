@@ -25,10 +25,6 @@ export type CreateFullSalePayload = {
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? AuthService.getToken() : null;
 
-  console.log(`🔍 Haciendo petición a: ${API_URL}${path}`);
-  console.log(`🔍 Token existe: ${!!token}`);
-  console.log(`🔍 Opciones:`, options);
-
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
@@ -39,15 +35,9 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   });
 
   const data = await res.json().catch(() => ({}));
-  
-  console.log(`🔍 Respuesta status: ${res.status}`);
-  console.log(`🔍 Respuesta data:`, data);
 
   if (!res.ok) {
       const msg = data?.message || data?.error || 'Error en la solicitud';
-      console.error(`❌ Error en API: ${msg}`);
-      console.error(`❌ Status: ${res.status}`);
-      console.error(`❌ Respuesta completa:`, data);
       throw new Error(msg);
     }
 
@@ -56,7 +46,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 export const salesService = {
   createFullSale: (payload: CreateFullSalePayload) =>
-    apiFetch<{ message: string; sale: any }>('/api/sales/full', {
+    apiFetch<{ message: string; sale: any; inventory_warnings?: string[] }>('/api/sales/full', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),

@@ -70,9 +70,20 @@ export class InventoryService {
   }
 
   // ==================== MOVIMIENTOS ====================
-  
+
+  static async getAllVariants(): Promise<{ message: string; variants: Array<{ variant_id: number; product_id: number; variant_name: string; ounces?: number | null; product?: { product_id: number; name: string } }> }> {
+    return this.request<{ message: string; variants: any[] }>('/api/variants');
+  }
+
   static async createMovement(data: MovementData): Promise<MovementResponse> {
     return this.request<MovementResponse>('/api/inventory/movements', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  static async createSupply(data: { location_id: number; item_name: string; quantity: number; reason?: string }): Promise<MovementResponse> {
+    return this.request<MovementResponse>('/api/inventory/supply', {
       method: 'POST',
       body: JSON.stringify(data),
     });

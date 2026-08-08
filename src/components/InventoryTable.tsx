@@ -119,7 +119,7 @@ export default function InventoryTable({
               </tr>
             ) : (
               filteredStock.map((item) => {
-                const status = getStockStatus(item.qty_on_hand);
+                const status = getStockStatus(Number(item.qty_on_hand));
                 return (
                   <tr key={`${item.variant_id}-${item.location_id}`} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
                     <td className="py-3 px-4">
@@ -146,7 +146,7 @@ export default function InventoryTable({
                       <span className="text-white/80">{item.location_name}</span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span className="text-lg font-semibold text-white">{item.qty_on_hand}</span>
+                      <span className="text-lg font-semibold text-white">{Math.round(Number(item.qty_on_hand))}</span>
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${status.bg} ${status.color}`}>
@@ -194,25 +194,25 @@ export default function InventoryTable({
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-white">
-                {filteredStock.reduce((sum, item) => sum + item.qty_on_hand, 0)}
+                {Math.round(filteredStock.reduce((sum, item) => sum + Number(item.qty_on_hand), 0))}
               </div>
               <div className="text-white/60 text-sm">Total Unidades</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-400">
-                {filteredStock.filter(item => item.qty_on_hand > 20).length}
+                {filteredStock.filter(item => Number(item.qty_on_hand) > 20).length}
               </div>
               <div className="text-white/60 text-sm">Stock Normal</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-400">
-                {filteredStock.filter(item => item.qty_on_hand > 5 && item.qty_on_hand <= 20).length}
+                {filteredStock.filter(item => Number(item.qty_on_hand) > 5 && Number(item.qty_on_hand) <= 20).length}
               </div>
               <div className="text-white/60 text-sm">Stock Bajo</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-400">
-                {filteredStock.filter(item => item.qty_on_hand <= 5).length}
+                {filteredStock.filter(item => Number(item.qty_on_hand) <= 5).length}
               </div>
               <div className="text-white/60 text-sm">Stock Crítico</div>
             </div>

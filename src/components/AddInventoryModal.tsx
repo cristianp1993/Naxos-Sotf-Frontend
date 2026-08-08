@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { InventoryLocation, StockUpdateData, MovementData } from '@/types/inventory';
+import { InventoryLocation, MovementData } from '@/types/inventory';
 import { InventoryService } from '@/services/inventoryService';
 
 interface AddInventoryModalProps {
@@ -11,12 +11,10 @@ interface AddInventoryModalProps {
   onSuccess: () => void;
 }
 
-interface InventoryItem {
-  id: string;
-  name: string;
-  type: 'predefined' | 'custom';
-  sku?: string;
-  description?: string;
+interface ProductVariantItem {
+  variant_id: number;
+  variant_name: string;
+  product_name: string;
 }
 
 export default function AddInventoryModal({
@@ -25,9 +23,8 @@ export default function AddInventoryModal({
   locations,
   onSuccess
 }: AddInventoryModalProps) {
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
-  const [customItemName, setCustomItemName] = useState('');
+  const [productVariants, setProductVariants] = useState<ProductVariantItem[]>([]);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [quantity, setQuantity] = useState('');
   const [reason, setReason] = useState('Ingreso inicial al inventario');
@@ -38,11 +35,10 @@ export default function AddInventoryModal({
   const [batchNumber, setBatchNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [useCustomItem, setUseCustomItem] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      loadInventoryItems();
+      loadProductVariants();
       resetForm();
     }
   }, [isOpen]);
@@ -66,29 +62,22 @@ export default function AddInventoryModal({
     };
   }, [isOpen]);
 
-  const loadInventoryItems = () => {
-    // Insumos comunes para un negocio de bebidas/negocio
-    const predefinedItems: InventoryItem[] = [
-      { id: 'plastic-8oz', name: 'Plástico 8 oz', type: 'predefined', description: 'Vasos plásticos de 8 onzas' },
-      { id: 'plastic-10oz', name: 'Plástico 10 oz', type: 'predefined', description: 'Vasos plásticos de 10 onzas' },
-      { id: 'plastic-16oz', name: 'Plástico 16 oz', type: 'predefined', description: 'Vasos plásticos de 16 onzas' },
-      { id: 'plastic-24oz', name: 'Plástico 24 oz', type: 'predefined', description: 'Vasos plásticos de 24 onzas' },
-      { id: 'bolsas-dulces', name: 'Bolsas de Dulces', type: 'predefined', description: 'Bolsas pequeñas para dulces' },
-      { id: 'bolsas-liquidos', name: 'Bolsas de Líquidos', type: 'predefined', description: 'Bolsas para bebidas líquidas' },
-      { id: 'latas-cerveza', name: 'Latas de Cerveza', type: 'predefined', description: 'Latas vacías de cerveza' },
-      { id: 'tapas-plastic', name: 'Tapas de Plástico', type: 'predefined', description: 'Tapas para vasos plásticos' },
-      { id: 'popotes', name: 'Popotes/Pajillas', type: 'predefined', description: 'Popotes de plástico' },
-      { id: 'servilletas', name: 'Servilletas', type: 'predefined', description: 'Servilletas de papel' },
-      { id: 'hielo', name: 'Hielo', type: 'predefined', description: 'Hielo en bolsa' },
-      { id: 'limpieza', name: 'Productos de Limpieza', type: 'predefined', description: 'Artículos de limpieza' }
-    ];
-    
-    setInventoryItems(predefinedItems);
+  const loadProductVariants = async () => {
+    try {
+      const response = await InventoryService.getAllVariants();
+      const variants = (response.variants || []).map((variant) => ({
+        variant_id: variant.variant_id,
+        variant_name: variant.variant_name,
+        product_name: variant.product?.name || 'Producto sin nombre'
+      }));
+      setProductVariants(variants);
+    } catch (err) {
+      setProductVariants([]);
+    }
   };
 
   const resetForm = () => {
-    setSelectedItem(null);
-    setCustomItemName('');
+    setSelectedVariantId(null);
     setSelectedLocation(null);
     setQuantity('');
     setReason('Ingreso inicial al inventario');
@@ -98,14 +87,12 @@ export default function AddInventoryModal({
     setCost('');
     setBatchNumber('');
     setError(null);
-    setUseCustomItem(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const itemName = useCustomItem ? customItemName.trim() : selectedItem;
-    if (!itemName || !selectedLocation || !quantity) {
+
+    if (!selectedVariantId || !selectedLocation || !quantity) {
       setError('Debe completar todos los campos obligatorios');
       return;
     }
@@ -120,9 +107,13 @@ export default function AddInventoryModal({
       setLoading(true);
       setError(null);
 
-      // Para inventario de insumos, usamos variant_id = 0 (genérico) y guardamos el nombre en el reason
+      const selectedVariant = productVariants.find(v => v.variant_id === selectedVariantId);
+      const displayItemName = selectedVariant
+        ? `${selectedVariant.product_name} - ${selectedVariant.variant_name}`
+        : 'Producto seleccionado';
+
       const detailedReason = [
-        `Item: ${itemName}`,
+        `Item: ${displayItemName}`,
         reason.trim(),
         barcode && `Código: ${barcode}`,
         expiryDate && `Vence: ${expiryDate}`,
@@ -131,20 +122,15 @@ export default function AddInventoryModal({
         batchNumber && `Lote: ${batchNumber}`
       ].filter(Boolean).join(' | ');
 
-      // Usamos variant_id = 999999 para items de inventario genéricos
-      await InventoryService.updateStock({
+      const movementData: MovementData = {
         location_id: selectedLocation,
-        variant_id: 999999,
-        qty_on_hand: qty
-      });
-
-      await InventoryService.createMovement({
-        location_id: selectedLocation,
-        variant_id: 999999,
+        variant_id: selectedVariantId,
         movement_type: 'PURCHASE',
         qty_change: qty,
         reason: detailedReason
-      });
+      };
+
+      await InventoryService.createMovement(movementData);
 
       onSuccess();
       onClose();
@@ -154,8 +140,6 @@ export default function AddInventoryModal({
       setLoading(false);
     }
   };
-
-  const selectedItemData = inventoryItems.find(item => item.id === selectedItem);
 
   if (!isOpen) return null;
 
@@ -184,82 +168,23 @@ export default function AddInventoryModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-5">
-              {/* Item Type Selection */}
+              {/* Product/Variant Selection */}
               <div className="mb-6">
-                <label className="block text-white/70 text-sm mb-2">Tipo de Item</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUseCustomItem(false);
-                      setSelectedItem(null);
-                    }}
-                    className={`p-3 rounded-xl border transition-all ${
-                      !useCustomItem
-                        ? 'bg-purple-600 border-purple-500 text-white'
-                        : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10'
-                    }`}
-                  >
-                    <div className="font-medium">Item Predefinido</div>
-                    <div className="text-xs opacity-70">Seleccionar de lista</div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUseCustomItem(true);
-                      setSelectedItem(null);
-                    }}
-                    className={`p-3 rounded-xl border transition-all ${
-                      useCustomItem
-                        ? 'bg-purple-600 border-purple-500 text-white'
-                        : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10'
-                    }`}
-                  >
-                    <div className="font-medium">Item Personalizado</div>
-                    <div className="text-xs opacity-70">Escribir nombre</div>
-                  </button>
-                </div>
+                <label className="block text-white/70 text-sm mb-2">Producto / Variante *</label>
+                <select
+                  value={selectedVariantId || ''}
+                  onChange={(e) => setSelectedVariantId(Number(e.target.value))}
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  required
+                >
+                  <option value="" className="bg-slate-800">Selecciona un producto/variante...</option>
+                  {productVariants.map((variant) => (
+                    <option key={variant.variant_id} value={variant.variant_id} className="bg-slate-800">
+                      {variant.product_name} - {variant.variant_name}
+                    </option>
+                  ))}
+                </select>
               </div>
-
-              {/* Item Selection */}
-              {!useCustomItem ? (
-                <div className="mb-6">
-                  <label className="block text-white/70 text-sm mb-2">Item del Inventario *</label>
-                  <select
-                    value={selectedItem || ''}
-                    onChange={(e) => setSelectedItem(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-800 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    required
-                  >
-                    <option value="" className="bg-slate-800">Selecciona un item...</option>
-                    {inventoryItems.map((item) => (
-                      <option key={item.id} value={item.id} className="bg-slate-800">
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div className="mb-6">
-                  <label className="block text-white/70 text-sm mb-2">Nombre del Item *</label>
-                  <input
-                    type="text"
-                    value={customItemName}
-                    onChange={(e) => setCustomItemName(e.target.value)}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Ej: Vasos de vidrio 12oz"
-                    required
-                  />
-                </div>
-              )}
-
-              {/* Selected Item Info */}
-              {selectedItemData && !useCustomItem && (
-                <div className="bg-white/5 rounded-xl p-4 mb-6">
-                  <div className="text-white/60 text-sm mb-1">Descripción</div>
-                  <div className="text-white font-medium">{selectedItemData.description}</div>
-                </div>
-              )}
 
               {/* Location Selection */}
               <div className="mb-6">

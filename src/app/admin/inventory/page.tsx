@@ -6,8 +6,11 @@ import { InventoryService } from '@/services/inventoryService';
 import InventoryTable from '@/components/InventoryTable';
 import StockAdjustmentModal from '@/components/StockAdjustmentModal';
 import AddInventoryModal from '@/components/AddInventoryModal';
+import { useToast } from '@/components/ui/toast';
 
 export default function InventoryPage() {
+  const toast = useToast();
+
   const [stock, setStock] = useState<InventoryStock[]>([]);
   const [locations, setLocations] = useState<InventoryLocation[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<number | undefined>();
@@ -38,14 +41,18 @@ export default function InventoryPage() {
         InventoryService.getLocations()
       ]);
 
+      let loadedLocations: InventoryLocation[] = [];
+
       if (!locationsResponse.success) {
         setError(locationsResponse.message || 'Error al cargar ubicaciones');
         setLocations([]);
       } else {
-        setLocations(locationsResponse.data);
+        loadedLocations = locationsResponse.data;
+        setLocations(loadedLocations);
       }
 
-      await loadAllStock();
+      // Cargar stock usando las ubicaciones recien cargadas, no el estado que aun no se actualizo
+      await loadAllStock(loadedLocations);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error de conexión');
     } finally {
@@ -53,13 +60,13 @@ export default function InventoryPage() {
     }
   };
 
-  const loadAllStock = async () => {
+  const loadAllStock = async (locationsToUse?: InventoryLocation[]) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Get stock from all active locations
-      const activeLocations = locations.filter(loc => loc.is_active);
+      // Usar las ubicaciones pasadas por parametro o las del estado
+      const activeLocations = (locationsToUse || locations).filter(loc => loc.is_active);
       const stockPromises = activeLocations.map(location => 
         InventoryService.getStockByLocation(location.location_id)
       );
@@ -124,6 +131,7 @@ export default function InventoryPage() {
   };
 
   const handleAddInventorySuccess = () => {
+    toast.success('Inventario registrado correctamente');
     if (selectedLocation !== undefined) {
       loadStockByLocation(selectedLocation);
     } else {
@@ -212,7 +220,7 @@ export default function InventoryPage() {
                   <div>
                     <p className="text-white/60 text-sm">Total Unidades</p>
                     <p className="text-3xl font-bold text-white mt-1">
-                      {stock.reduce((sum, item) => sum + item.qty_on_hand, 0)}
+                      {Math.round(stock.reduce((sum, item) => sum + Number(item.qty_on_hand), 0))}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
@@ -228,7 +236,7 @@ export default function InventoryPage() {
                   <div>
                     <p className="text-white/60 text-sm">Stock Crítico</p>
                     <p className="text-3xl font-bold text-red-400 mt-1">
-                      {stock.filter(item => item.qty_on_hand <= 5).length}
+                      {stock.filter(item => Number(item.qty_on_hand) <= 5).length}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
@@ -285,6 +293,7 @@ export default function InventoryPage() {
           onSuccess={handleAddInventorySuccess}
         />
       </div>
+      <toast.ToastComponent />
     </div>
   );
 }

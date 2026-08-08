@@ -490,6 +490,10 @@ export default function SalesPage() {
         toast.success('¡Venta registrada exitosamente!');
       }
 
+      if (saleResult?.inventory_warnings?.length) {
+        saleResult.inventory_warnings.forEach((warning: string) => toast.warning(warning, 7000));
+      }
+
       setCart([]);
       setObservation('');
       setPayments([]);
