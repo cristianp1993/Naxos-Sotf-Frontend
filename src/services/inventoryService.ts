@@ -33,7 +33,8 @@ export class InventoryService {
       const errorData = await response.json().catch(() => ({
         message: 'Error de conexión'
       }));
-      throw new Error(errorData.message || `Error ${response.status}`);
+      const detail = errorData.details ? ` (${errorData.details})` : '';
+      throw new Error(errorData.message || `Error ${response.status}` + detail);
     }
 
     return response.json();
