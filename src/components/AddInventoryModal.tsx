@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { InventoryLocation, MovementData } from '@/types/inventory';
 import { InventoryService } from '@/services/inventoryService';
 
@@ -25,6 +25,9 @@ export default function AddInventoryModal({
 }: AddInventoryModalProps) {
   const [productVariants, setProductVariants] = useState<ProductVariantItem[]>([]);
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [variantQuery, setVariantQuery] = useState('');
+  const [showVariantOptions, setShowVariantOptions] = useState(false);
+  const variantBoxRef = useRef<HTMLDivElement>(null);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [quantity, setQuantity] = useState('');
   const [reason, setReason] = useState('Ingreso inicial al inventario');
@@ -62,6 +65,17 @@ export default function AddInventoryModal({
     };
   }, [isOpen]);
 
+  // Cerrar el listado de variantes al clicar fuera del selector
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (variantBoxRef.current && !variantBoxRef.current.contains(e.target as Node)) {
+        setShowVariantOptions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const loadProductVariants = async () => {
     try {
       const response = await InventoryService.getAllVariants();
@@ -78,6 +92,8 @@ export default function AddInventoryModal({
 
   const resetForm = () => {
     setSelectedVariantId(null);
+    setVariantQuery('');
+    setShowVariantOptions(false);
     setSelectedLocation(null);
     setQuantity('');
     setReason('Ingreso inicial al inventario');
@@ -141,6 +157,47 @@ export default function AddInventoryModal({
     }
   };
 
+  const obtenerEtiquetaVariante = (variante: ProductVariantItem) =>
+    `${variante.product_name} - ${variante.variant_name}`;
+
+  // Cuando ya hay una variante elegida se muestra el listado completo al reabrirlo
+  const textoBusqueda = selectedVariantId ? '' : variantQuery.trim().toLowerCase();
+  const variantesFiltradas = textoBusqueda
+    ? productVariants.filter((variante) =>
+        obtenerEtiquetaVariante(variante).toLowerCase().includes(textoBusqueda)
+      )
+    : productVariants;
+
+  const seleccionarVariante = (variante: ProductVariantItem) => {
+    setSelectedVariantId(variante.variant_id);
+    setVariantQuery(obtenerEtiquetaVariante(variante));
+    setShowVariantOptions(false);
+  };
+
+  const handleVariantQueryChange = (valor: string) => {
+    setVariantQuery(valor);
+    setSelectedVariantId(null);
+    setShowVariantOptions(true);
+  };
+
+  const handleVariantKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setShowVariantOptions(false);
+      return;
+    }
+    // Evita enviar el formulario y selecciona la primera coincidencia
+    if (e.key === 'Enter' && showVariantOptions && variantesFiltradas.length > 0) {
+      e.preventDefault();
+      seleccionarVariante(variantesFiltradas[0]);
+    }
+  };
+
+  const limpiarVariante = () => {
+    setSelectedVariantId(null);
+    setVariantQuery('');
+    setShowVariantOptions(true);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -168,22 +225,67 @@ export default function AddInventoryModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-5">
-              {/* Product/Variant Selection */}
-              <div className="mb-6">
+              {/* Product/Variant Selection con buscador */}
+              <div className="mb-6" ref={variantBoxRef}>
                 <label className="block text-white/70 text-sm mb-2">Producto / Variante *</label>
-                <select
-                  value={selectedVariantId || ''}
-                  onChange={(e) => setSelectedVariantId(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  required
-                >
-                  <option value="" className="bg-slate-800">Selecciona un producto/variante...</option>
-                  {productVariants.map((variant) => (
-                    <option key={variant.variant_id} value={variant.variant_id} className="bg-slate-800">
-                      {variant.product_name} - {variant.variant_name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={variantQuery}
+                    onChange={(e) => handleVariantQueryChange(e.target.value)}
+                    onFocus={(e) => {
+                      setShowVariantOptions(true);
+                      // Con una variante ya elegida se resalta el texto para reemplazarlo al escribir
+                      if (selectedVariantId) e.target.select();
+                    }}
+                    onKeyDown={handleVariantKeyDown}
+                    placeholder="Escribe para buscar un producto o variante..."
+                    autoComplete="off"
+                    className="w-full px-4 py-3 pr-10 bg-slate-800 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  {variantQuery ? (
+                    <button
+                      type="button"
+                      onClick={limpiarVariante}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+                    </svg>
+                  )}
+
+                  {showVariantOptions && (
+                    <div className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-white/20 bg-slate-900/95 backdrop-blur-xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto">
+                      {variantesFiltradas.length === 0 ? (
+                        <p className="px-4 py-3 text-white/60 text-sm">
+                          {productVariants.length === 0
+                            ? 'No se pudieron cargar los productos'
+                            : 'Sin resultados para esa búsqueda'}
+                        </p>
+                      ) : (
+                        variantesFiltradas.map((variante) => (
+                          <button
+                            key={variante.variant_id}
+                            type="button"
+                            onClick={() => seleccionarVariante(variante)}
+                            className={`w-full text-left px-4 py-3 text-sm transition-colors border-b border-white/5 last:border-b-0 hover:bg-white/10 ${
+                              selectedVariantId === variante.variant_id ? 'bg-purple-600/25 text-white' : 'text-white/90'
+                            }`}
+                          >
+                            <span className="font-medium">{variante.product_name}</span>
+                            <span className="text-white/50"> - {variante.variant_name}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Location Selection */}
