@@ -24,7 +24,11 @@ export default function InventoryTable({
 }: InventoryTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredStock = stock.filter(item => {
+  // CP 2026-08-18 Se protege contra respuestas que no sean arreglos
+  const stockList = Array.isArray(stock) ? stock : [];
+  const locationList = Array.isArray(locations) ? locations : [];
+
+  const filteredStock = stockList.filter(item => {
     const searchLower = searchTerm.toLowerCase();
     return (
       item.product_name?.toLowerCase().includes(searchLower) ||
@@ -71,7 +75,7 @@ export default function InventoryTable({
               className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="">Todas las ubicaciones</option>
-              {locations.map((location) => (
+              {locationList.map((location) => (
                 <option key={location.location_id} value={location.location_id}>
                   {location.name}
                 </option>

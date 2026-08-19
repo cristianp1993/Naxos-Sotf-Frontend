@@ -47,7 +47,7 @@ export default function InventoryPage() {
         setError(locationsResponse.message || 'Error al cargar ubicaciones');
         setLocations([]);
       } else {
-        loadedLocations = locationsResponse.data;
+        loadedLocations = Array.isArray(locationsResponse.data) ? locationsResponse.data : [];
         setLocations(loadedLocations);
       }
 
@@ -66,14 +66,15 @@ export default function InventoryPage() {
       setError(null);
 
       // Usar las ubicaciones pasadas por parametro o las del estado
-      const activeLocations = (locationsToUse || locations).filter(loc => loc.is_active);
+      const sourceLocations = locationsToUse || locations;
+      const activeLocations = (Array.isArray(sourceLocations) ? sourceLocations : []).filter(loc => loc.is_active);
       const stockPromises = activeLocations.map(location => 
         InventoryService.getStockByLocation(location.location_id)
       );
 
       const responses = await Promise.all(stockPromises);
-      const allStock = responses.flatMap(response => 
-        response.success ? response.data : []
+      const allStock = responses.flatMap(response =>
+        response.success && Array.isArray(response.data) ? response.data : []
       );
 
       setStock(allStock);
@@ -95,7 +96,7 @@ export default function InventoryPage() {
         setError(response.message || 'Error al cargar inventario');
         setStock([]);
       } else {
-        setStock(response.data);
+        setStock(Array.isArray(response.data) ? response.data : []);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar inventario');

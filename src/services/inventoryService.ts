@@ -42,8 +42,10 @@ export class InventoryService {
 
   // ==================== UBICACIONES ====================
   
+  // CP 2026-08-18 Se normaliza data a arreglo para evitar errores de .map en el render
   static async getLocations(): Promise<LocationsResponse> {
-    return this.request<LocationsResponse>('/api/inventory/locations');
+    const response = await this.request<LocationsResponse>('/api/inventory/locations');
+    return { ...response, data: Array.isArray(response.data) ? response.data : [] };
   }
 
   static async createLocation(data: LocationFormData): Promise<LocationResponse> {
@@ -56,7 +58,8 @@ export class InventoryService {
   // ==================== STOCK ====================
   
   static async getStockByLocation(locationId: number): Promise<StockResponse> {
-    return this.request<StockResponse>(`/api/inventory/locations/${locationId}/stock`);
+    const response = await this.request<StockResponse>(`/api/inventory/locations/${locationId}/stock`);
+    return { ...response, data: Array.isArray(response.data) ? response.data : [] };
   }
 
   static async getStockByVariant(variantId: number): Promise<StockResponse> {

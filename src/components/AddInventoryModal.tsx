@@ -199,7 +199,7 @@ export default function AddInventoryModal({
                   {locations.length === 0 ? (
                     <option value="1" className="bg-slate-800">Bodega Principal</option>
                   ) : (
-                    locations.filter(loc => loc.is_active).map((location) => (
+                    (Array.isArray(locations) ? locations : []).filter(loc => loc.is_active).map((location) => (
                       <option key={location.location_id} value={location.location_id} className="bg-slate-800">
                         {location.name}
                       </option>
