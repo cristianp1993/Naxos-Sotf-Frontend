@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -18,7 +18,18 @@ export const metadata: Metadata = {
   description: "Sistema de gestión - Naxos Coctels",
   icons: {
     icon: '/favicon.ico',
+    apple: '/icons/apple-icon.png',
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Naxos',
+  },
+};
+
+// CP 2026-10-01 Color de la barra del navegador cuando la app esta instalada
+export const viewport: Viewport = {
+  themeColor: '#581c87',
 };
 
 export default function RootLayout({
