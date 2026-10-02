@@ -1,7 +1,7 @@
 # ---- deps ----
 FROM node:24.11.0-alpine AS deps
 WORKDIR /app
-RUN corepack enable
+RUN npm install -g pnpm@10.33.2
 
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --ignore-scripts
@@ -9,7 +9,7 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 # ---- build ----
 FROM node:24.11.0-alpine AS builder
 WORKDIR /app
-RUN corepack enable
+RUN npm install -g pnpm@10.33.2
 
 # deps para build
 COPY --from=deps /app/node_modules ./node_modules
