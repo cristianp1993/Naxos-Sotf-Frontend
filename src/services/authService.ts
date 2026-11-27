@@ -176,6 +176,43 @@ export class AuthService {
     }
   }
 
+  // Cambiar la contraseña del usuario autenticado (cualquier rol)
+  static async changePassword(
+    currentPassword: string,
+    newPassword: string
+  ): Promise<{ ok: boolean; message: string; sessionExpired?: boolean }> {
+    const token = this.getToken();
+    if (!token || !this.isAuthenticated()) {
+      return { ok: false, sessionExpired: true, message: 'Tu sesión ha expirado. Inicia sesión nuevamente.' };
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 401 || response.status === 403) {
+        return { ok: false, sessionExpired: true, message: data.message || 'Tu sesión ha expirado. Inicia sesión nuevamente.' };
+      }
+
+      if (!response.ok) {
+        return { ok: false, message: data.message || 'No se pudo cambiar la contraseña' };
+      }
+
+      return { ok: true, message: data.message || 'Contraseña cambiada exitosamente' };
+    } catch (error) {
+      console.error('Error cambiando contraseña:', error);
+      return { ok: false, message: 'Error de conexión al servidor' };
+    }
+  }
+
   // Método para limpiar tokens inválidos
   static clearInvalidTokens(): void {
     const validation = this.validateCurrentToken();

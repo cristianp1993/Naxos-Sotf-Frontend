@@ -1,8 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, usePathname } from 'next/navigation';
+import ChangePasswordModal from '@/components/ChangePasswordModal';
+
+const KeyIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+    />
+  </svg>
+);
 
 // Iconos SVG para el sidebar
 const DashboardIcon = ({ className }: { className?: string }) => (
@@ -326,6 +338,8 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [productsOpen, setProductsOpen] = useState(true);
   const [salesOpen, setSalesOpen] = useState(true);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const closePasswordModal = useCallback(() => setPasswordModalOpen(false), []);
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -630,8 +644,20 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
 
         </nav>
 
-        {/* Logout Button */}
-        <div className={`p-4 ${collapsed ? 'flex justify-center' : 'flex flex-col items-center'} border-t border-white/10`}>
+        {/* Footer: cambiar contraseña + logout (todos los roles) */}
+        <div className="p-4 flex flex-col items-center gap-1 border-t border-white/10">
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              setPasswordModalOpen(true);
+            }}
+            title="Cambiar contraseña"
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-all duration-200 ${collapsed ? 'justify-center' : ''
+              }`}
+          >
+            <KeyIcon className="w-5 h-5 text-purple-300" />
+            {!collapsed && <span className="text-purple-300 font-medium">Cambiar Contraseña</span>}
+          </button>
           <button
             onClick={handleLogout}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${collapsed ? 'justify-center' : ''
@@ -642,6 +668,14 @@ export default function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           </button>
         </div>
       </div>
+
+      {passwordModalOpen && (
+        <ChangePasswordModal
+          open
+          onClose={closePasswordModal}
+          onSessionExpired={handleLogout}
+        />
+      )}
     </>
   );
 }
